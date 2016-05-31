@@ -204,7 +204,7 @@ option_envName_Verify(){
 ###############################################################################
 option_cp_format_Verify(){
   local srcSpec
-  local trgSpec 
+  local trgSpec
   cp_srcTrg_Seperate "$1" 'srcSpec' 'trgSpec' 
 }
 ###############################################################################
@@ -271,7 +271,7 @@ VirtCmmdExecute(){
   local -r ctag
   # start Docker client
   local -r clientName="client_$$_${ctag}"
-  if ! docker run -d -i -t --name $clientName --link $serverName:docker docker:$ctag >/dev/null; then
+  if ! docker run -d -i -t --name $clientName --link ${serverName}:docker docker:$ctag >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker client from image: 'docker:$ctag', with container name: '$clientName'."
   fi
   server_client_report "$serverName" "$clientName" 'successfully started'
@@ -292,7 +292,7 @@ VirtCmmdExecute(){
   fi
   # perform cp operation before executing commands as the files may represent 
   # scripts that will be executed in context of Docker client.
-  cp_Perform 'cpOptLst' 'cpOptMap' 
+  cp_Perform 'cpOptLst' 'cpOptMap' "$clientName"
   # create command map by filtering cli arguments.
   local -r cmmdArgFilter='[[ $optArg =~ ^Arg[1-9][0-9]*$ ]]'
   local -a cmmdArgLst
@@ -300,7 +300,7 @@ VirtCmmdExecute(){
   if ! OptionsArgsFilter "$optArgLst_ref" "$optArgMap_ref" 'cmmdArgLst' 'cmmdArgMap' "$cmmdArgFilter" 'true'; then
     ScriptUnwind "$LINENO" "Problem filtering command arguments."
   fi
-  command_Execute 'cmmdArgLst' 'cmmdArgMap'
+  command_Execute 'cmmdArgLst' 'cmmdArgMap' "$clientName_ref"
   local -r rtn_code="$?"
   # clean directive
   local cleanDirective
@@ -341,28 +341,29 @@ cp_Perform(){
   local -r dkrcpExist
   eval set -- \$\{$cpOptLst_ref\[\@\]\}
   while (( $# > 0 )); do
-    AssociativeMapAssignIndirect "cpOptMap_ref" "$1" 'sourceTargetSpec'
+    AssociativeMapAssignIndirect "$cpOptMap_ref" "$1" 'sourceTargetSpec'
     cp_srcTrg_Seperate "$sourceTargetSpec" 'srcSpec' 'trgSpec'
     if ! arg_type_format_decide "$srcSpec" 'srcSpecType'; then
       ScriptUnwind "$LINENO" "Copy source: '$srcSpec' of unknown type."
     fi
     case $srcSpecType in
       filepath|stream)
-        if ! docker cp "$srcSpecType" "${clientName}:$trgSpec">/dev/null; then
-          ScriptUnwind "$LINENO" "Copy command failed: 'docker cp $srcSpecType" "${clientName}:$trgSpec'"
+        if ! docker cp "$srcSpec" "${clientName}:$trgSpec">/dev/null; then
+          ScriptUnwind "$LINENO" "Copy command failed: 'docker cp $srcSpec ${clientName}:$trgSpec'."
         fi
       ;;
       containerfilepath|imagefilepath)
         if ! dkrcpExist; then
           ScriptUnwind "$LINENO" "Source type: '$srcSpecType' for source spec: '$srcSpec' requires: 'dkrcp.sh'."
         elif ! $dkrcpName "$srcSpecType" "${clientName}:$trgSpec"; then
-          ScriptUnwind "$LINENO" "Copy command failed: 'dkrcp $srcSpecType" "${clientName}:$trgSpec'."
+          ScriptUnwind "$LINENO" "Copy command failed: 'dkrcp $srcSpec ${clientName}:$trgSpec'."
         fi
       ;;
       *)
         ScriptUnwind "$LINENO" "Copy source: '$srcSpec' doesn't exist or of unknown type: '$srcSpecType'."
       ;;
     esac
+    shift
   done
 }
 ###########################################################################
@@ -418,7 +419,7 @@ cp_srcTrg_Seperate(){
     ScriptUnwind "$LINENO" "Copy source-target spec: '$srcTrgSpec' must encode a ':' immediately before its absolute target path. Ex: './hostfile:/targetLoc'."
   fi
   ref_simple_value_Set "$srcSpec_ref" "${BASH_REMATCH[1]}"
-  ref_simple_value_ser "$trgSpec_ref" "${BASH_REMATCH[2]}"
+  ref_simple_value_Set "$trgSpec_ref" "${BASH_REMATCH[2]}"
 }
 ##############################################################################
 #TODO refactor the fuction into own module.
@@ -489,26 +490,24 @@ arg_type_format_decide() {
 command_Execute(){
   local -r cmdArgLst_ref="$1"
   local -r cmdArgMap_ref="$2"
+  local -r clientName_ref="$3"
 
+  # make selected variable name client name visible
+  eval local \-r clientName=\"\$$clientName_ref\"
   local cmdTmplt
   local cmdExec
   local cmdRtnCd=0
   eval set -- \$\{$cmdArgLst_ref\[\@\]\}
   while (( $# > 0 )); do
     AssociativeMapAssignIndirect "$cmdArgMap_ref" "$1" 'cmdTmplt'
-    ScriptDebug "$LINENO" "tmplt: $cmdTmplt"
     eval local cmdExec=\"$cmdTmplt\"
-
-    ScriptDebug "$LINENO" "command: $1"
-
     if ! [[ $cmdExec =~ ^[[:space:]]*docker[[:space:]]+exec ]]; then
       # ensure all commands begin with docker exec.  If not
       # user relies on script to add it with default exec option values.
-      cmdExec="docker exec $clientName $cmdExec"
+      cmdExec="docker exec $clientName docker-entrypoint.sh $cmdExec"
     fi
-    ScriptDebug "$LINENO" "$cmdExec"
     if $cmdExec; then
-      ScriptInform "Command: '$cmdExec' terminated successfully."
+      ScriptInform "Command: '$cmdExec' successfully terminated."
     else
       cmdRtnCd="$?"
       ScriptError  "Command: '$cmdExec' failed with exit code: '$cmdRtnCd'. Terminating remaining commands."
