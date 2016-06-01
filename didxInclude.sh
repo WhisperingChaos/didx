@@ -258,7 +258,7 @@ VirtCmmdExecute(){
     local -r stag="${serverVersion}-dind"
   fi
   # start the docker server
-  local -r serverName="server_$$_${serverVersion}"
+  local -r serverName="dind_$$_server_${serverVersion}"
   if ! docker run --privileged -d --name $serverName -v "$DOCKER_LOCAL_REPRO_PATH" docker:$stag >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker server from image: 'docker:$stag', with container name: '$serverName'."
   fi
@@ -270,7 +270,7 @@ VirtCmmdExecute(){
   if [ -z "$ctag" ]; then ctag="$serverVersion"; fi
   local -r ctag
   # start Docker client
-  local -r clientName="client_$$_${ctag}"
+  local -r clientName="dind_$$_client_${ctag}"
   if ! docker run -d -i -t --name $clientName --link ${serverName}:docker docker:$ctag >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker client from image: 'docker:$ctag', with container name: '$clientName'."
   fi
