@@ -295,7 +295,7 @@ VirtCmmdExecute(){
   AssociativeMapAssignIndirect "$optArgMap_ref" '--clean' 'cleanDirective'
   local -r cleanDirective
   if [ "$cleanDirective" == 'all' ]; then
-    server_client_Iterate 'all' 'server_client_Destroy "$containerType" "$containerName"'
+    server_client_Iterate 'all' 'server_or_client_Destroy "$containerType" "$containerName"'
     # terminate script
     return
   fi
@@ -704,6 +704,22 @@ server_Destroy(){
 ##
 ###########################################################################
 server_client_Destroy(){
+  local -r serverName="$1" 
+  local -r clientName="$2"
+
+  client_Destroy "$clientName" && server_Destroy  "$serverName"
+}
+###########################################################################
+##
+##  Purpose:
+##    Destroy dind server or client.
+##
+##  Input:
+##    $1  - Container type: 'client' or 'server'
+##    $2  - Container name. 
+##
+###########################################################################
+server_or_client_Destroy(){
   local -r containerType="$1" 
   local -r containerName="$2"
 
@@ -734,7 +750,7 @@ server_client_report(){
 }
 ###########################################################################
 dind_Report(){
-  ScriptInform "Docker Engine dind $1 container named: '$2' $3."
+  ScriptInform "dind $1 named: '$2' $3."
 }
 FunctionOverrideCommandGet
 ###############################################################################
