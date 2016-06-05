@@ -9,14 +9,15 @@
 declare TRAP_SERVER_NAME
 declare TRAP_CLIENT_NAME
 trap_server_Destroy(){
-  server_client_Destroy "$TRAP_SERVER_NAME" ''
+  server_Destroy "$TRAP_SERVER_NAME"
 }
 trap_server_destroy_Set(){
   TRAP_SERVER_NAME="$1"
   trap 'trap_server_Destroy' EXIT
 }
 trap_server_client_Destroy(){
-  server_client_Destroy "$TRAP_SERVER_NAME" "$TRAP_CLIENT_NAME"
+  client_Destroy "$TRAP_CLIENT_NAME"
+  server_Destroy "$TRAP_SERVER_NAME" 
 }
 trap_server_client_destroy_Set(){
   TRAP_SERVER_NAME="$1"
@@ -41,6 +42,28 @@ trap_Off(){
 ###########################################################################
 ref_simple_value_Set(){
   eval $1=\"\$2\"
+}
+###########################################################################
+##
+##  Purpose:
+##    Obtain the storage driver used by the docker instance that will
+##    execute this script's docker commands.
+##
+##  Input:
+##    $1 - Variable name to accept the storage driver name.
+##
+##  Output:
+##    $1 - Variable assigned the storage driver name displayed by 'docker info.'
+##
+###########################################################################
+docker_stg_driver_Get(){
+  local -r stgDrvr_ref="$1"
+  local -r NameRegex='[a-zA-Z0-9][a-zA-Z0-9_.-]*'
+
+  if ! [[ $( docker info 2>/dev/null ) =~ Storage.Driver:[[:space:]]*($NameRegex) ]]; then
+    ScriptUnwind "$LINENO" "Unable to identify 'Storage Driver:' value from 'docker info' command."
+  fi
+  ref_simple_value_Set "$stgDrvr_ref" "${BASH_REMATCH[1]}" 
 }
 ##############################################################################
 ##
@@ -69,6 +92,7 @@ DOCKER_LOCAL_REPRO_PATH='/var/lib/docker'
 #TODO refactor the following regex into own module.
 REG_EX_REPOSITORY_NAME_UUID='^([a-z0-9]([._-]?[a-z0-9]+)*/)*(sha256:)?[a-z0-9]([a-z0-9._-]+)*(:[A-Za-z0-9._-]*)?'
 REG_EX_CONTAINER_NAME_UUID='^[a-zA-Z0-9][a-zA-Z0-9_.-]*'
+STATUS_TERM_DSTRY='terminated & destroyed'
 true
 }
 ##############################################################################
@@ -78,17 +102,21 @@ true
 ##
 ###############################################################################
 VirtCmmdHelpDisplay(){
+  local stgDrvrDefault
+  docker_stg_driver_Get 'stgDrvrDefault'
+  local -r stgDrvrDefault
+
 cat <<HELP_DOC
 
-Usage: didx [OPTIONS] {| COMMAND [COMMAND] ...}
+Usage: didx.sh [OPTIONS] {| COMMAND [COMMAND] ...}
 
-  COMMAND -  Command executed within context of DIND client container
-             via 'docker exec ...'.
+  COMMAND -  Command executed within context of Docker in Docker (dind)
+             client container.
 
-  Use local Docker Engine to run a Docker Engine image cast as the "server".
-  Once started, run second Docker Engine image cast as the "client".  After
-  the client starts, copy zero or more files into the client's file system
-  then execute one or more COMMANDS within the client's container.
+  Use local Docker Engine to run a Docker Engine container cast as the "server".
+  Once started, run second Docker Engine container cast as the "client".  After
+  the client starts, copy or mount zero or more files into the client's
+  file system then execute one or more COMMANDS within the client container.
 
   The server container's local repository is encapsulated as a data volume
   attached to only this server.  This configuration isolates image and container
@@ -105,9 +133,7 @@ OPTIONS:
                                  'docker cp' used when SourceSpec referrs to host file or
                                  input stream.  Otherwise, when source refers to 
                                  container or image, cp performed by 'dkrcp'.
-    --cv_env=CLIENT_NAME       Environment variable name which contains the Docker client's
-                                 container name.  Use in COMMAND to identify client container.
-    --clean=none               After executing all COMMANDs sanitize environment.  Note
+    --clean=none               After executing all COMMANDs, sanitize environment.  Note
                                  if an option value preserves the server's data volume,
                                  you must manually delete it using the -v option when 
                                  removing the server's container.
@@ -119,9 +145,18 @@ OPTIONS:
                                  failure: When at least one COMMAND fails, terminate
                                           and remove server & client containers
                                           Delete  server data volume.
-                                 anycase: Reguardless of COMMAND exit, code terminate
-                                          and remove server, client containers
+                                 anycase: Reguardless of COMMAND exit code, terminate
+                                          and remove server, client containers.
                                           Delete server data volume.
+                                 all:     Remove all dind containers from local repository.
+                                          If necessary, terminate running instances.
+    -s,--storage-driver=$stgDrvrDefault  Docker storage driver name.  Determines method
+                                  applied to physically represent and manage images and
+                                  containers stored locally by the Docker server container.
+                                  Value defaults to the one utilized by the Docker instance
+                                  managing the Docker server container.  
+    --cv_env=CLIENT_NAME       Environment variable name which contains the Docker client's
+                                 container name.  Use in COMMAND to identify client container.
     -h,--help=false            Don't display this help message.
     --version=false            Don't display version info.
 
@@ -152,16 +187,22 @@ VERSION_DOC
 ##
 ###############################################################################
 VirtCmmdOptionsArgsDef(){
+
+  local stgDrvrDefault
+  docker_stg_driver_Get 'stgDrvrDefault'
+  local -r stgDrvrDefault
+
 # optArgName cardinality default verifyFunction presence alias
 cat <<OPTIONARGS
-ArgN           single ''                ''                                              optional
---sv           single 'latest'          ''                                              required 
---cv           single ''                ''                                              optional
---cv_env       single 'CLIENT_NAME'     "option_envName_Verify    '\\<--cv_env\\>'"     required
---cp=N         single ''                "option_cp_format_Verify  '\\<--cp=N\\>'"       optional
---clean        single 'none'            "option_clean_Verify      '\\<--clean\\>'"      required
---help         single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--help\\>'"       required "-h"
---version      single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--version\\>'"    required
+ArgN             single ''                ''                                              optional
+--sv	         single 'latest'          ''                                              required
+--cv             single ''                ''                                              optional
+--storage-driver single '$stgDrvrDefault' ''                                              required "-s" 
+--cv_env         single 'CLIENT_NAME'     "option_envName_Verify    '\\<--cv_env\\>'"     required
+--cp=N           single ''                "option_cp_format_Verify  '\\<--cp=N\\>'"       optional
+--clean          single 'none'            "option_clean_Verify      '\\<--clean\\>'"      required
+--help           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--help\\>'"       required "-h"
+--version        single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--version\\>'"    required
 OPTIONARGS
 }
 ###############################################################################
@@ -224,11 +265,11 @@ option_cp_format_Verify(){
 ###############################################################################
 option_clean_Verify(){
   case $1 in
-    none|success|failure|anycase) 
+    none|success|failure|anycase|all) 
       true
     ;;
     *)
-      ScriptError "Expected --clean values: 'none|success|failure|anycase', encountered: '$1'."
+      ScriptError "Expected --clean values: 'none|success|failure|anycase|all', encountered: '$1'."
     ;;
   esac
 }
@@ -249,6 +290,15 @@ option_clean_Verify(){
 VirtCmmdExecute(){
   local -r optArgLst_ref="$1"
   local -r optArgMap_ref="$2"
+  # clean all directive short circuits general functionality
+  local cleanDirective
+  AssociativeMapAssignIndirect "$optArgMap_ref" '--clean' 'cleanDirective'
+  local -r cleanDirective
+  if [ "$cleanDirective" == 'all' ]; then
+    server_client_Iterate 'all' 'server_client_Destroy "$containerType" "$containerName"'
+    # terminate script
+    return
+  fi
   # obtain server version
   local serverVersion
   AssociativeMapAssignIndirect "$optArgMap_ref" '--sv' 'serverVersion'
@@ -257,9 +307,13 @@ VirtCmmdExecute(){
   else
     local -r stag="${serverVersion}-dind"
   fi
+  # obtain server storage driver
+  local storageDriver
+  AssociativeMapAssignIndirect "$optArgMap_ref" '--storage-driver' 'storageDriver'
+  local -r storageDriver
   # start the docker server
   local -r serverName="dind_$$_server_${serverVersion}"
-  if ! docker run --privileged -d --name $serverName -v "$DOCKER_LOCAL_REPRO_PATH" docker:$stag >/dev/null; then
+  if ! docker run --privileged -d --name $serverName -v "$DOCKER_LOCAL_REPRO_PATH" docker:$stag /usr/local/bin/dockerd-entrypoint.sh --storage-driver=$storageDriver >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker server from image: 'docker:$stag', with container name: '$serverName'."
   fi
   # set trap to destroy when something unexpected happens.
@@ -302,10 +356,6 @@ VirtCmmdExecute(){
   fi
   command_Execute 'cmmdArgLst' 'cmmdArgMap' "$clientName_ref"
   local -r rtn_code="$?"
-  # clean directive
-  local cleanDirective
-  AssociativeMapAssignIndirect "$optArgMap_ref" '--clean' 'cleanDirective'
-  local -r cleanDirective
   # eliminate trap
   trap_Off
   server_client_Clean "$serverName" "$clientName" "$cleanDirective" "$rtn_code"
@@ -563,7 +613,7 @@ server_client_Clean(){
       ScriptError "Unknown clean directive: '$cleanDirective'."
     ;;
   esac
-  local status='terminated & destroyed'
+  local status="$STATUS_TERM_DSTRY"
   if $remainsRunning; then
     status='remains running'
   fi
@@ -573,38 +623,99 @@ server_client_Clean(){
 ###########################################################################
 ##
 ##  Purpose:
-##    Destroy DIND server, bclient and server's repository.
+##    Iterate over all containers whose name conforms to script generated
+##    dind server or client name and implements dind entry point name of 
+##    dockerd-entrypoint.sh.
+##
+##    Iterater terminates on first failure or all successful.
 ##
 ##  Input:
-##    $1  - Container name for dind server. 
-##    $2  - (Optional) Container name for client linked to dind server. 
+##    $1  - A filter pattern to select a subset or a proper superset
+##          of dind containers.  Currently, 'all' simply selects every
+##          dind container.  
+##    $2  - A function invocation whose parameters reverence
+##          '$containerType' and '$containerName'
 ##
 ###########################################################################
-server_client_Destroy(){
-  local -r serverName="$1" 
-  local -r clientName="$2"
-  local rtnStatus='false'
-  while true; do 
-    # terminate client.
-    if [ -n "$clientName" ] && ! docker stop "$clientName" > /dev/null; then break; fi
-    if [ -n "$clientName" ] && ! docker rm   "$clientName" > /dev/null; then break; fi
-    # terminate server and remove data volume containing its repository.
-    if ! docker stop "$serverName" > /dev/null; then break; fi
-    if ! docker rm -v "$serverName" > /dev/null; then break; fi
-    rtnStatus='true'
-    break
-  done
-  $rtnStatus
+server_client_Iterate(){
+  local -r pattern="$1"  # currently ignored
+  local -r funExec="$2"
+  local -r dindpatternClient='dind_[0-9]+_client_([0-9.]+|latest)'
+  local -r dindpatternServer='dind_[0-9]+_server_([0-9.]+-dind|dind)'
+
+  local containerType
+  local containerName
+  local rtnStatus=0
+  while [ "$rtnStatus" -eq '0' ] && read containerName; do
+    if   [[ $containerName =~ ($dindpatternClient) ]]; then   
+      containerType='client'
+    elif [[ $containerName =~ ($dindpatternServer) ]]; then   
+      containerType='server'
+    else
+      # container name fails to match dind name generated by this script
+      continue
+    fi
+    containerName="$BASH_REMATCH[1]}"
+    if [[ $( docker inspect -f '{{ .Config.Entrypoint }}' $containerName 2>/dev/null; ) =~ .*dockerd-entrypoint.sh ]]; then
+      # matches dind container pattern and entrypoint reflects dind signature
+      # pretty confident that's a dind container generated by this script.
+      eval $funExec;
+      rtnStatus="$?"
+    fi
+  done < <( docker ps -a )
 }
 ###########################################################################
 ##
 ##  Purpose:
-##    Generate status report to STDOUT regarding DIND server/client status.
+##    Destroy dind client.
+##
+##  Input:
+##    $1  - Container name for dind client. 
+##
+###########################################################################
+client_Destroy(){
+    docker    stop "$1" > /dev/null \
+    && docker rm   "$1" > /dev/null 
+}
+###########################################################################
+##
+##  Purpose:
+##    Destroy dind server and it's repository.
 ##
 ##  Input:
 ##    $1  - Container name for dind server. 
-##    $2  - (Optional) Container name for client linked to dind server. 
-##    $3  - (Optional) Container name for client linked to dind server. 
+##
+###########################################################################
+server_Destroy(){
+    docker    stop  "$1" > /dev/null \
+    && docker rm -v "$1" > /dev/null 
+}
+###########################################################################
+##
+##  Purpose:
+##    Destroy dind server or client.
+##
+##  Input:
+##    $1  - Container type: 'client' or 'server'
+##    $2  - Container name. 
+##
+###########################################################################
+server_client_Destroy(){
+  local -r containerType="$1" 
+  local -r containerName="$2"
+
+  ${containerType}_Destroy "$containerName" \
+  && dind_Report "${containerType}" "$containerName" "$STATUS_TERM_DSTRY"
+}
+###########################################################################
+##
+##  Purpose:
+##    Generate status report to STDOUT regarding dind server/client status.
+##
+##  Input:
+##    $1  - Container name for dind server. 
+##    $2  - Container name for dind client linked to dind server. 
+##    $3  - Container status.
 ##
 ##  Output:
 ##    STDOUT - status message.
@@ -615,8 +726,12 @@ server_client_report(){
   local -r clientName="$2"
   local -r status="$3" 
 
-  ScriptInform "Docker Engine dind server container named: '$serverName' $status."
-  ScriptInform "Docker Engine dind client container named: '$clientName' $status."
+  dind_Report 'server' "$serverName" "$status"
+  dind_Report 'client' "$clientName" "$status"
+}
+###########################################################################
+dind_Report(){
+  ScriptInform "Docker Engine dind $1 container named: '$2' $3."
 }
 FunctionOverrideCommandGet
 ###############################################################################
