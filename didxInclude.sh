@@ -75,7 +75,7 @@ docker_stg_driver_Get(){
 ##
 ###############################################################################
 function VirtCmmdArgumentsParse () {
-  local -r -a ucpOptRepeatList=( '--cp' )
+  local -r -a ucpOptRepeatList=( '--cp' '--mt' )
   ArgumentsParse "$1" "$2" "$3" 'ucpOptRepeatList'
 }
 ##############################################################################
@@ -133,6 +133,10 @@ OPTIONS:
                                  'docker cp' used when SourceSpec referrs to host file or
                                  input stream.  Otherwise, when source refers to 
                                  container or image, cp performed by 'dkrcp'.
+    --mt[]                     Mount host file system references into container running
+                                 Docker client. (Optional)
+                                 Format: <HostFilePath>:<AbsoluteClientContainerPath>
+                                 'docker run -v' option used to implement mount.
     --clean=none               After executing all COMMANDs, sanitize environment.  Note
                                  if an option value preserves the server's data volume,
                                  you must manually delete it using the -v option when 
@@ -191,7 +195,6 @@ VirtCmmdOptionsArgsDef(){
   local stgDrvrDefault
   docker_stg_driver_Get 'stgDrvrDefault'
   local -r stgDrvrDefault
-
 # optArgName cardinality default verifyFunction presence alias
 cat <<OPTIONARGS
 ArgN             single ''                ''                                              optional
@@ -200,6 +203,7 @@ ArgN             single ''                ''                                    
 --storage-driver single '$stgDrvrDefault' ''                                              required "-s" 
 --cv_env         single 'CLIENT_NAME'     "option_envName_Verify    '\\<--cv_env\\>'"     required
 --cp=N           single ''                "option_cp_format_Verify  '\\<--cp=N\\>'"       optional
+--mt=N           single ''                "option_mt_format_Verify  '\\<--mt=N\\>'"       optional
 --clean          single 'none'            "option_clean_Verify      '\\<--clean\\>'"      required
 --help           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--help\\>'"       required "-h"
 --version        single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--version\\>'"    required
@@ -247,6 +251,26 @@ option_cp_format_Verify(){
   local srcSpec
   local trgSpec
   cp_srcTrg_Seperate "$1" 'srcSpec' 'trgSpec' 
+}
+###############################################################################
+##
+##  Purpose:
+##    Verify target-source specification for mt.
+##
+##  Inputs:
+##    $1 - target-source specification.
+## 
+##  Return Code:
+##    When Success:
+##       Nothing.     
+##    When Failure: 
+##      Write error reason to STDERR.
+##
+###############################################################################
+option_mt_format_Verify(){
+  if ! [[ $1 =~ ^(.+):(/.+) ]]; then
+    ScriptError "Mount source-target spec: '$1' must encode a ':' immediately before its absolute target container path. Ex: './hostfile:/targetContainerLoc'."
+  fi
 }
 ###############################################################################
 ##
@@ -318,6 +342,16 @@ VirtCmmdExecute(){
   fi
   # set trap to destroy when something unexpected happens.
   trap_server_destroy_Set "$serverName"
+  # generate mount, -v, options if specified.
+  local -r mtOptFilter='[[ $optArg =~ ^--mt=[1-9][0-9]*$ ]]'
+  local -a mtOptLst
+  local -A mtOptMap
+  if ! OptionsArgsFilter "$optArgLst_ref" "$optArgMap_ref" 'mtOptLst' 'mtOptMap' "$mtOptFilter" 'true'; then
+    ScriptUnwind "$LINENO" "Problem filtering mt options."
+  fi
+  local mtClientOpts
+  mt_options_Gen 'mtOptLst' 'mtOptMap' 'mtClientOpts'
+  local -r mtClientOpts
   # determine client tag
   local ctag
   AssociativeMapAssignIndirect "$optArgMap_ref" '--cv' 'ctag'
@@ -325,7 +359,7 @@ VirtCmmdExecute(){
   local -r ctag
   # start Docker client
   local -r clientName="dind_$$_client_${ctag}"
-  if ! docker run -d -i -t --name $clientName --link ${serverName}:docker docker:$ctag >/dev/null; then
+  if ! eval docker run \-d \-i \-t $mtClientOpts \-\-name \$clientName \-\-link \$\{serverName\}:docker docker:\$ctag >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker client from image: 'docker:$ctag', with container name: '$clientName'."
   fi
   server_client_report "$serverName" "$clientName" 'successfully started'
@@ -362,6 +396,33 @@ VirtCmmdExecute(){
   # exit with the return code of the last COMMAND 
   return $rtn_code
 }
+###########################################################################
+##
+##  Purpose:
+##    Generate docker host volume option.
+##
+##  Input:
+##    $1  - Array variable name of ordered mt keys.
+##    $2  - Map variable name of mt keys specified in $1 associated 
+##          to host-target container specification.
+##    $3  - Variable name to assign generated docker run -v option syntax.
+##
+###########################################################################
+mt_options_Gen(){
+  local -r mtOptLst_ref="$1"
+  local -r mtOptMap_ref="$2"
+  local -r mtClientOpts_ref="$3"
+
+  local mtPath
+  local mtPathComplete
+  eval set -- \$\{$mtOptLst_ref\[\@\]\}
+  while (( $# > 0 )); do
+    AssociativeMapAssignIndirect "$mtOptMap_ref" "$1" 'mtPath'
+    mtPathComplete+="-v '$mtPath' "
+    shift
+  done
+  ref_simple_value_Set "$mtClientOpts_ref" "$mtPathComplete"
+}  
 ###########################################################################
 ##
 ##  Purpose:
