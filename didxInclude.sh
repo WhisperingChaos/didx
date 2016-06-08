@@ -133,6 +133,7 @@ OPTIONS:
                                  'docker cp' used when SourceSpec referrs to host file or
                                  input stream.  Otherwise, when source refers to 
                                  container or image, cp performed by 'dkrcp'.
+    -p,--pull=false            Perform explicit docker pull before running server/client.
     --mt[]                     Mount host file system references into container running
                                  Docker client. (Optional)
                                  Format: <HostFilePath>:<AbsoluteClientContainerPath>
@@ -200,6 +201,7 @@ cat <<OPTIONARGS
 ArgN             single ''                ''                                              optional
 --sv	         single 'latest'          ''                                              required
 --cv             single ''                ''                                              optional
+--pull           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--pull\\>'"       required "-p"
 --storage-driver single '$stgDrvrDefault' ''                                              required "-s" 
 --cv_env         single 'CLIENT_NAME'     "option_envName_Verify    '\\<--cv_env\\>'"     required
 --cp=N           single ''                "option_cp_format_Verify  '\\<--cp=N\\>'"       optional
@@ -337,6 +339,15 @@ VirtCmmdExecute(){
   local -r storageDriver
   # start the docker server
   local -r serverName="dind_$$_server_${serverVersion}"
+  # need to pull fresh server and client
+  local dockerPull
+  AssociativeMapAssignIndirect "$optArgMap_ref" '--pull' 'dockerPull'
+  local -r dockerPull
+  if $dockerPull; then
+    if ! docker pull docker:$stag >/dev/null; then
+      ScriptUnwind "$LINENO" "Failed to pull Docker server image: 'docker:$stag'."
+    fi
+  fi
   if ! docker run --privileged -d --name $serverName -v "$DOCKER_LOCAL_REPRO_PATH" docker:$stag /usr/local/bin/dockerd-entrypoint.sh --storage-driver=$storageDriver >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker server from image: 'docker:$stag', with container name: '$serverName'."
   fi
@@ -357,6 +368,11 @@ VirtCmmdExecute(){
   AssociativeMapAssignIndirect "$optArgMap_ref" '--cv' 'ctag'
   if [ -z "$ctag" ]; then ctag="$serverVersion"; fi
   local -r ctag
+  if $dockerPull; then 
+    if ! docker pull docker:$ctag >/dev/null; then
+      ScriptUnwind "$LINENO" "Failed to pull Docker client image: 'docker:$ctag'."
+    fi
+  fi
   # start Docker client
   local -r clientName="dind_$$_client_${ctag}"
   if ! eval docker run \-d \-i \-t $mtClientOpts \-\-name \$clientName \-\-link \$\{serverName\}:docker docker:\$ctag >/dev/null; then
