@@ -87,7 +87,7 @@ A detailed explaination of [Docker in Docker (dind)](https://hub.docker.com/_/do
 ```--cv``` Determines the Docker client image to run as the client container (separate from the server).  When running, the client container is [linked](https://docs.docker.com/v1.8/userguide/dockerlinks/) to the dind server container.  Although the Docker client and server container versions are typically identical, they can differ.  If ```--cv``` is omitted, ```didx``` will match the client version to the one specified by ```--sv```.
 
 ####--pull
---pull directs ```didx``` to perform an explicit [```docker pull```](https://docs.docker.com/engine/reference/commandline/pull/) before executing ```docker run``` to potentially refresh the Docker Engine Host's local repository with the most recent version of both the dind server and client images. 
+--pull directs ```didx``` to perform an explicit [```docker pull```](https://docs.docker.com/engine/reference/commandline/pull/) before executing ```docker run``` to potentially refresh the Docker Engine Host's local repository with the most recent version of both the dind server and client images.  Usually, pull should be unnecessary for a version specifier that identifies a particular Docker Engine version,
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
