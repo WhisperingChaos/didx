@@ -78,7 +78,7 @@ OPTIONS:
 For more help: https://github.com/WhisperingChaos/didx/blob/master/README.md#didx
 
 ```
-  
+A detailed explaination of [Docker in Docker (dind)](https://hub.docker.com/_/docker/).
 
 ##Options
 ####--sv,--cv
@@ -97,7 +97,3 @@ The Docker Engine Host <a href="#TermsDockerEngineHost">Docker Engine Host</a> v
 
    + [~jpetazzo/Using Docker-in-Docker for your CI or testing environment? Think twice.](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
    + [Original dind project](https://github.com/jpetazzo/dind#docker-in-docker)
-
-
-
-[Docker Hub](https://hub.docker.com/_/docker/)
