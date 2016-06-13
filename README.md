@@ -1,9 +1,9 @@
 # didx
-Configures and starts a 'Docker In Docker' (dind) server container with its own local repository and and spins up an associated docker client container.  Once dind server and client have started, '''didx''' executes one or more scripts/programs within context of the dind client container.
+Configures and starts a 'Docker In Docker' (dind) server container with its own, empty local repository and spins up an associated docker client container.  Once dind server and client have started, '''didx''' executes one or more scripts/programs within context of the dind client container.
 
 Use didx to create a Docker test environment that's automatically destroyed after all tests successfully complete.
 #####ToC
-[Options](#images-as-sourcetarget)  
+[Options](#options)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--sv,--cv](#option-sv-cv)  
 [Examples](#examples)  
 [Installing](#install)  
@@ -75,3 +75,7 @@ OPTIONS:
 For more help: https://github.com/WhisperingChaos/didx/blob/master/README.md#didx
 
 ```
+##Options
+####--sv,--cv
+```--sv``` Determines the Docker Engine version of the dind image to pull from [Docker Hub](https://hub.docker.com/_/docker/) and start as the server container.  ```didx``` converts the version specifier to the appropriate dind tag.  The conversion simply appends *-dind* to the provided version specifier, except in the case of 'latest' which fetches the most recent dind version.  The  list of dind supported versions can be derived by removing the *-dind* suffix from [dind tags](https://hub.docker.com/r/library/docker/tags/).
+
