@@ -89,10 +89,10 @@ For more help: https://github.com/WhisperingChaos/didx/blob/master/README.md#did
 ####--pull
 --pull directs ```didx``` to perform an explicit [```docker pull```](https://docs.docker.com/engine/reference/commandline/pull/) before executing ```docker run``` to potentially refresh the Docker Engine Host's local repository with the most recent version of both the dind server and client images. 
 
-##Terms:
+##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
 
-##Warning Label:
+##Warning Label
 The Docker Engine Host <a href="#TermsDockerEngineHost">Docker Engine Host</a> version can differ from the Docker Engine versions running in the dind server and client, however, version incompatibilities may arise when mixing certain groupings of differning versions.  In general, conflicts arise from differences in capability settings and they can sometimes be resolved.  View the following links for an indepth discussion of dind cautionary tales:
 
    + [~jpetazzo/Using Docker-in-Docker for your CI or testing environment? Think twice.](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
