@@ -6,6 +6,7 @@ Use didx to create a Docker test environment that's automatically destroyed afte
 [Options](#options)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--sv,--cv](#--sv--cv)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--pull](#--pull)  
+&nbsp;&nbsp;&nbsp;&nbsp;[--pull](#--cp)  
 [Examples](#examples)  
 [Installing](#install)  
 [Testing](#testing)  
@@ -87,7 +88,11 @@ A detailed explaination of [Docker in Docker (dind)](https://hub.docker.com/_/do
 ```--cv``` Determines the Docker client image to run as the client container (separate from the server).  When running, the client container is [linked](https://docs.docker.com/v1.8/userguide/dockerlinks/) to the dind server container.  Although the Docker client and server container versions are typically identical, they can differ.  If ```--cv``` is omitted, ```didx``` will match the client version to the one specified by ```--sv```.
 
 ####--pull
---pull directs ```didx``` to perform an explicit [```docker pull```](https://docs.docker.com/engine/reference/commandline/pull/) before executing ```docker run``` to potentially refresh the Docker Engine Host's local repository with the most recent version of both the dind server and client images.  ```--pull``` is typically unnecessary when specifying a particular version specifier, like 1.11, which identifies a particular Docker Engine version.  However, when describing the dind version using an adaptable lable, like *'latest'* or in situations where Docker has updated a specific image version, the local repository image of the dind server and/or client offered by the Docker Engine Host may be stale.  For example, *'latest'* may refer to an older Docker Engine version, as one or more releases may have occurred since the initial ```docker pull``` populated the local repository.
+```--pull``` directs ```didx``` to perform an explicit [```docker pull```](https://docs.docker.com/engine/reference/commandline/pull/) before executing ```docker run``` to refresh the Docker Engine Host's local repository with the most recent version of both the dind server and client images.  ```--pull``` is typically unnecessary when specifying a particular version specifier, like 1.11.  However, when describing the dind version using an adaptable lable, like *'latest'* or in situations where Docker has updated a specific image version, the local repository image of the dind server and/or client offered by the Docker Engine Host may be stale.  For example, *'latest'* may refer to an older Docker Engine version, as one or more releases may have occurred since the initial ```docker pull``` populated the local repository.
+
+####--cp,--mt
+```--cp``` extends the client container's abilities by adding any number of scripts, programs, and  to the client's file system.  
+
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
