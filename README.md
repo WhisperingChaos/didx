@@ -77,5 +77,8 @@ For more help: https://github.com/WhisperingChaos/didx/blob/master/README.md#did
 ```
 ##Options
 ####--sv,--cv
-```--sv``` Determines the Docker Engine version of the dind image to pull from [Docker Hub](https://hub.docker.com/_/docker/) and start as the server container.  ```didx``` converts the version specifier to the appropriate dind tag.  The conversion simply appends *-dind* to the provided version specifier, except in the case of 'latest' which fetches the most recent dind version.  The  list of dind supported versions can be derived by removing the *-dind* suffix from [dind tags](https://hub.docker.com/r/library/docker/tags/).
+```--sv``` Determines the Docker Engine dind image version to run as the server container.  ```didx``` converts the version specifier to the appropriate dind tag.  The conversion simply appends *-dind* to the provided version specifier, except in the case of 'latest' which fetches the most recent dind version.  The  list of dind supported versions can be derived by removing the *-dind* suffix from [dind tags](https://hub.docker.com/r/library/docker/tags/).  
 
+```--cv``` Determines the Docker client image to run as the client container (separate from the server).  When running, the client container is [linked](https://docs.docker.com/v1.8/userguide/dockerlinks/) to the dind server container.  Although the Docker client and server container versions are typically identical, they can differ.  If ```--cv``` is omitted, ```didx``` will match the client version to the one specified by ```--sv```.
+
+ pull from [Docker Hub](https://hub.docker.com/_/docker/) and 
