@@ -9,9 +9,9 @@ Use didx to create a Docker test environment that's automatically destroyed afte
 [Examples](#examples)  
 [Installing](#install)  
 [Testing](#testing)  
-[Warning Label](#warning-label)
-[Motivation](#motivation)
-[License](#license)
+[Warning Label](#warning-label)  
+[Motivation](#motivation)  
+[License](#license)  
 ```
 
 Usage: didx.sh [OPTIONS] {| COMMAND [COMMAND] ...}
@@ -96,7 +96,7 @@ For more help: https://github.com/WhisperingChaos/didx/blob/master/README.md#did
 The Docker Engine Host version can differ from the Docker Engine versions running in the dind server and client, however, version incompatibilities may arise when mixing certain groupings of differning versions.  In general, conflicts arise from differences in capability settings and they can sometimes be resolved.  View the following links for an indepth discussion of dind cautionary tales:
 
    + [~jpetazzo/Using Docker-in-Docker for your CI or testing environment? Think twice.](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
-   + [Original dind project](https://github.com/jpetazzo/dind)
+   + [Original dind project](https://github.com/jpetazzo/dind#docker-in-docker)
 
 
 
