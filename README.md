@@ -4,7 +4,7 @@ Configures and starts a 'Docker In Docker' (dind) server container with its own,
 Use didx to create a Docker test environment that's automatically destroyed after all tests successfully complete.
 #####ToC
 [Options](#options)  
-&nbsp;&nbsp;&nbsp;&nbsp;[--sv,--cv](#option-sv-cv)  
+&nbsp;&nbsp;&nbsp;&nbsp;[--sv,--cv](#--sv--cv)  
 [Examples](#examples)  
 [Installing](#install)  
 [Testing](#testing)  
