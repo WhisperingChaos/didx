@@ -90,12 +90,32 @@ A detailed explaination of [Docker in Docker (dind)](https://hub.docker.com/_/do
 ####--pull
 ```--pull``` directs ```didx``` to perform an explicit [```docker pull```](https://docs.docker.com/engine/reference/commandline/pull/) before executing ```docker run``` to refresh the Docker Engine Host's local repository with the most recent version of both the dind server and client images.  ```--pull``` is typically unnecessary when specifying a particular version specifier, like 1.11.  However, when describing the dind version using an adaptable lable, like *'latest'* or in situations where Docker has updated a specific image version, the local repository image of the dind server and/or client offered by the Docker Engine Host may be stale.  For example, *'latest'* may refer to an older Docker Engine version, as one or more releases may have occurred since the initial ```docker pull``` populated the local repository.
 
-####--cp,--mt
-```--cp``` extends the client container's abilities by adding any number of files to the client's file system.  Source files can reside in the Docker Engine Host file system, container, or image.  They can also be streamed as a tar.  These various source types determine the copy method applied to transfer files from one or more sources to the targeted file system in the client container.  Files sourced from the Docker Engine Host file system or a streamed tar employ the [```docker cp```](https://docs.docker.com/engine/reference/commandline/cp/) method while sources types referencing other container or image file systems use [```dkrcp.sh```](https://github.com/WhisperingChaos/dkrcp#dkrcp).  Due to its non Docker affliated status, ```dkrcp.sh``` isn't immediately available, as opposed to ```docker cp```, therefore, it must be downloaded from Github and installed on the Docker Engine Host in a location accessible via the host's PATH or through an alias.  
+####--cp[],-v[]
+```--cp``` extends the client container's abilities by adding any number of files to the client's file system.  Source files can reside in the Docker Engine Host file system, container, or image.  They can also be streamed as a tar.  These various source types determine the copy method applied to transfer files from one or more sources to the targeted file system in the client container.  Files sourced from the Docker Engine Host file system or a streamed tar employ the [```docker cp```](https://docs.docker.com/engine/reference/commandline/cp/) method while sources types referencing other container or image file systems use [```dkrcp.sh```](https://github.com/WhisperingChaos/dkrcp#dkrcp).  Due to its non Docker affliated status, ```dkrcp.sh``` isn't immediately available, as opposed to ```docker cp```, therefore, it must be downloaded from Github and installed on the Docker Engine Host in a location accessible via the host's PATH or through an alias.
 
-
- such as scripts, programs, and data,
-Execution of added scripts/programs can be initiated by issuing a COMMAND to run the program.  Since the dind server and client Docker images include [Alpine Linx](https://en.wikipedia.org/wiki/Alpine_Linux) in their derivation chains and this distro includes a package management feature, the client container can implement processes of arbitary complexity by combining the capabilities of ```--cp``` and Apline's [apk package manager](http://wiki.alpinelinux.org/wiki/Alpine_Linux_package_management) glued together using [busybox](https://en.wikipedia.org/wiki/BusyBox) and its [Almquist Shell (ash)](https://en.wikipedia.org/wiki/Almquist_shell).  If your scripts require full bash compatibility, encode a process the runs apk to install bash before executing bash specific scripts. 
+```
+--cp option format:
+   <SourceSpec>:<AbsoluteClientContainerPath>
+      <SourceSpec>-><HostFilePath>
+      <SourceSpec>-><Stream>
+      <SourceSpec>->{<ContainerName>|<UUID>}:<AbsoluteContainerPath>
+      <SourceSpec>->{<ImageName>|<UUID>}::<AbsoluteImagePath>
+      
+      <HostFilePath>->{<AbsoluteFilePath>|<RelativeFilePath>}
+      <Stream>->-
+      <ContainerName>->^[a-zA-Z0-9][a-zA-Z0-9_.-]*
+      <ImageName>->[<NameSpace>/...]<RepositoryName>:[<TagName>]
+      <NameSpace>, <RepositoryName>->^[a-z0-9][a-z0-9._-]*
+      <TagName>->[A-Za-z0-9._-]+
+      <AbsoluteContainerPath>-><AbsolutePath>
+      <AbsoluteImagePath>-><AbsolutePath>
+      <AbsoluteClientContainerPath>-><AbsolutePath>
+      <AbsolutePath>->/.*
+      <RelativeFilePath>->./.*
+      
+  Ultimately, the format of the <SourceSpec> and 
+```
+Use ```--cp``` to dynamically install processes implemented as scripts/programs extending the client container's abilities.  Execution of added scripts/programs can be initiated by issuing a COMMAND to run the program.  Since the dind server and client Docker images include [Alpine Linx](https://en.wikipedia.org/wiki/Alpine_Linux) in their derivation chains and this distro includes a package management feature, the client container can implement processes of arbitary complexity by combining the capabilities of ```--cp``` and Apline's [apk package manager](http://wiki.alpinelinux.org/wiki/Alpine_Linux_package_management) glued together using [busybox](https://en.wikipedia.org/wiki/BusyBox) and its [Almquist Shell (ash)](https://en.wikipedia.org/wiki/Almquist_shell).  If scripts require full bash compatibility, encode a process the runs apk to install bash before executing them. 
 
 
 ##Terms
