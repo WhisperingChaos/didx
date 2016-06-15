@@ -124,6 +124,33 @@ Zero to many ```--cp``` instances may be specified as options to ```didx```.  Th
 ```
 Use this copy mechanism to dynamically extend the client container's abilities by installing processes implemented as scripts/programs.  Execution of added scripts/programs can be initiated by issuing a COMMAND to run them.  Since the dind server and client Docker images include [Alpine Linux](https://en.wikipedia.org/wiki/Alpine_Linux) in their derivation chains and this distro includes a package management feature, the client container can implement processes of arbitary complexity by combining the capabilities of ```--cp```, Apline's [apk package manager](http://wiki.alpinelinux.org/wiki/Alpine_Linux_package_management) and [busybox's](https://en.wikipedia.org/wiki/BusyBox) [Almquist Shell (ash)](https://en.wikipedia.org/wiki/Almquist_shell).  If scripts require full bash compatibility, encode a process the runs apk to install bash before executing them. 
 
+Similar to ```--cp```, ```-v``` (volume) command extends the client container contents, however, it uses Docker's [volume](https://docs.docker.com/engine/userguide/containers/dockervolumes/) feature to bind the desired files from some source, like Docker Engine Host file system or a named volume, to the client container's file system instead of physically copying the files as implemented by ```--cp```.
+
+Since ```-v``` supports the creation of anynomous volumes, ```didx``` will destroy the client container's anynomous volumes if it has been directed to via the ```--clean``` option value.
+```
+-v option format:
+   [<SourceSpec>:]<AbsoluteClientContainerPath>
+      <SourceSpec>-><HostFilePath>
+      <SourceSpec>-><NamedVolumeFilePath>
+
+      <HostFilePath>->{<AbsoluteFilePath>|<RelativeFilePath>}
+      <NamedVolumeFilePath>->?  # not currently sure of its definition.
+      <AbsoluteClientContainerPath>-><AbsolutePath>
+      <AbsolutePath>->/.*
+      <RelativeFilePath>->./.*
+      
+    Ex: /host/file:/client/container/target/                        # <SourceSpec>-><HostFilePath>
+    Ex: named-volume:/named/volume/file:/client/container/target/   # <SourceSpec>-><ContainerName>
+    Ex: /client/container/target/volume                             # Creates an anonymous volume.
+    
+  Ultimately, the format of -v conforms to -v option of docker run.
+```
+Use both ```--cp``` and ```-v``` to concurrently extend the client container.  ```didx``` applies the ```-v``` option before considering ```-cp```.  This ordering permits the creation of anynomous volumes associated to the client container enabling ```--cp``` to target a file path within the anynomous volume.
+
+###```--cp``` VS ```-v```
+
+
+
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
 
