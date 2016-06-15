@@ -147,9 +147,15 @@ Since ```-v``` supports the creation of anynomous volumes, ```didx``` will destr
 ```
 Use both ```--cp``` and ```-v``` to concurrently extend the client container.  ```didx``` applies the ```-v``` option before considering ```-cp```.  This ordering permits the creation of anynomous volumes associated to the client container enabling ```--cp``` to target a file path within the anynomous volume.
 
-###```--cp``` VS ```-v```
+#####```--cp``` VS ```-v```
+In general use ```--cp```:
+  * for smallish files,
+  * to physically encapsulate and couple the copied file's existance (life cycle) to the client container,
+  * to reduce the dynamics introduced by ```-v```.
 
-
+Use ```-v```:
+  * for large files, 
+  * when the file's life cycle is independent of the client container.  
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
