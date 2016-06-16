@@ -7,6 +7,7 @@ Use didx to create a Docker test environment that's automatically destroyed afte
 &nbsp;&nbsp;&nbsp;&nbsp;[--sv,--cv](#--sv--cv)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--pull](#--pull)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--cp[],-v[]](#--cp-v)  
+&nbsp;&nbsp;&nbsp;&nbsp;[--clean](#--clean)  
 [Examples](#examples)  
 [Installing](#install)  
 [Testing](#testing)  
@@ -155,13 +156,19 @@ In general use ```--cp```:
 
 Use ```-v```:
   * for large files, 
-  * when the file's life cycle is independent of the client container.  
+  * when the file's life cycle is independent of the client container.
+
+####--clean
+Represents the function that destroys dind server and client containers including any anynomous volumes associated to them.  This option's value defines the triggering condition that causes the function's invocation.  For example, a value of *'success'* invokes the clean function if every COMMAND completes successfully (return code=0).  Since the option values besides *'all'* are sufficiently explained by ```--help```, no further explaination will be provided for them.  However, *'all'* warrants mention.
+
+*'all'* short circuits ```didx```'s typical execution flow replacing it with behavior to search and destroy dind server and client containers.  The searches scours the local repository for container instances whose names regex match the naming pattern used by ```didx``` to identify candidate instances for deletion.  *'all'* then further filters the candidate instances to ensure their Docker [entrypoint](https://docs.docker.com/engine/reference/builder/#entrypoint) signatures reflect those assigned to the dind server and client containers.  A [```docker stop```](https://docs.docker.com/engine/reference/commandline/stop/) is executed for containers satisfying both filters before being destroyed by [```docker rm -v```](https://docs.docker.com/engine/reference/commandline/rm/).
+
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
 
 ##Warning Label
-The Docker Engine Host <a href="#TermsDockerEngineHost">Docker Engine Host</a> version can differ from the Docker Engine versions running in the dind server and client, however, version incompatibilities may arise when mixing certain groupings of differning versions.  In general, conflicts arise from differences in capability settings and they can sometimes be resolved.  View the following links for an indepth discussion of dind cautionary tales:
+The <a href="#TermsDockerEngineHost">Docker Engine Host</a> version can differ from the Docker Engine versions running in the dind server and client, however, version incompatibilities may arise when mixing certain groupings of differning versions.  In general, conflicts arise from differences in capability settings and they can sometimes be resolved.  View the following links for an indepth discussion of dind cautionary tales:
 
    + [~jpetazzo/Using Docker-in-Docker for your CI or testing environment? Think twice.](http://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/)
    + [Original dind project](https://github.com/jpetazzo/dind#docker-in-docker)
