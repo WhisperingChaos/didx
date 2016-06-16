@@ -75,7 +75,7 @@ docker_stg_driver_Get(){
 ##
 ###############################################################################
 function VirtCmmdArgumentsParse () {
-  local -r -a ucpOptRepeatList=( '--cp' '--mt' )
+  local -r -a ucpOptRepeatList=( '--cp' '-v' )
   ArgumentsParse "$1" "$2" "$3" 'ucpOptRepeatList'
 }
 ##############################################################################
@@ -124,46 +124,54 @@ Usage: didx.sh [OPTIONS] {| COMMAND [COMMAND] ...}
   this script.  
 
 OPTIONS:
-    --sv                       Docker server version.  Defaults to most recent
-                                 stable (public) Docker Engine version.
-    --cv                       Docker client version.  Defaults to --sv value.
-    --cp[]                     Copy files from source location into container running 
-                                 Docker client. (Optional)  
-                                 Format: <SourceSpec>:<AbsoluteClientContainerPath>
-                                 'docker cp' used when SourceSpec referrs to host file or
-                                 input stream.  Otherwise, when source refers to 
-                                 container or image, cp performed by 'dkrcp'.
-    -p,--pull=false            Perform explicit docker pull before running server/client.
-    --mt[]                     Mount host file system references into container running
-                                 Docker client. (Optional)
-                                 Format: <HostFilePath>:<AbsoluteClientContainerPath>
-                                 'docker run -v' option used to implement mount.
-    --clean=none               After executing all COMMANDs, sanitize environment.  Note
-                                 if an option value preserves the server's data volume,
-                                 you must manually delete it using the -v option when 
-                                 removing the server's container.
-                                 none:    Leave server & client containers running
-                                          in background.  Preserve server data volume.
-                                 success: When all COMMANDs succeed, terminate and
-                                          remove server & client containers.
-                                          Delete server data volume.
-                                 failure: When at least one COMMAND fails, terminate
-                                          and remove server & client containers
-                                          Delete  server data volume.
-                                 anycase: Reguardless of COMMAND exit code, terminate
-                                          and remove server, client containers.
-                                          Delete server data volume.
-                                 all:     Remove all dind containers from local repository.
-                                          If necessary, terminate running instances.
-    -s,--storage-driver=$stgDrvrDefault  Docker storage driver name.  Determines method
-                                  applied to physically represent and manage images and
-                                  containers stored locally by the Docker server container.
-                                  Value defaults to the one utilized by the Docker instance
-                                  managing the Docker server container.  
-    --cv_env=CLIENT_NAME       Environment variable name which contains the Docker client's
-                                 container name.  Use in COMMAND to identify client container.
-    -h,--help=false            Don't display this help message.
-    --version=false            Don't display version info.
+  --sv                       Docker server version.  Defaults to most recent
+                               stable (public) Docker Engine version.  Click
+                               https://hub.docker.com/r/library/docker/tags/ to
+                               view supported versions.
+  --cv                       Docker client version.  Defaults to --sv value.
+  -p,--pull=false            Perform explicit docker pull before running server/client.
+  --cp[]                     Copy files from source location into container running 
+                               Docker client. (Optional)  
+                               Format: <SourceSpec>:<AbsoluteClientContainerPath>
+                                 <SourceSpec>-><hostFilePath>
+                                 <SourceSpec>-><stream>->-
+                                 <SourceSpec>->{<containerName>|<UUID>}:<AbsoluteContainerPath>
+                                 <SourceSpec>->{<imageName>|<UUID>}[:<tag>]::<AbsoluteImagePath>
+                               'docker cp' used when <SourceSpec> referrs to host file or
+                               input stream.  Otherwise, when source refers to 
+                               container or image, cp performed by 'dkrcp'.
+  -v[]                       Mount host file system references or create an anynomous
+                               volume in the container running Docker client. (Optional)
+                               Format: [{<HostFilePath>|<VolumeFilePath>}:]<AbsoluteClientContainerPath>
+                               'docker run -v' option used to implement mount.
+  --clean=none               After executing all COMMANDs, sanitize environment.  Note
+                               if an option value preserves the server's data volume,
+                               you must manually delete it using the -v option when 
+                               removing the server's container.
+                               none:    Leave server & client containers running
+                                        in background.  Preserve server data volume.
+                               success: When all COMMANDs succeed, terminate and
+                                        remove server & client containers.
+                                        Delete server data volume.
+                               failure: When at least one COMMAND fails, terminate
+                                        and remove server & client containers
+                                        Delete  server data volume.
+                               anycase: Regardless of COMMAND exit code, terminate
+                                        and remove server, client containers.
+                                        Delete server data volume.
+                               all:     Remove all server, client containers from
+                                        local repository. If necessary, terminate
+                                        running instances.
+                                        Delete all server data volumes.
+  -s,--storage-driver=$stgDrvrDefault  Docker storage driver name.  Determines method
+                                applied to physically represent and manage images and
+                                containers stored locally by the Docker server container.
+                                Value defaults to the one utilized by the Docker instance
+                                managing the Docker server container.  
+  --cv-env=CLIENT_NAME       Environment variable name which contains the Docker client's
+                               container name.  Use in COMMAND to identify client container.
+  -h,--help=false            Don't display this help message.
+  --version=false            Don't display version info.
 
 For more help: https://github.com/WhisperingChaos/didx/blob/master/README.md#didx
 
@@ -203,9 +211,9 @@ ArgN             single ''                ''                                    
 --cv             single ''                ''                                              optional
 --pull           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--pull\\>'"       required "-p"
 --storage-driver single '$stgDrvrDefault' ''                                              required "-s" 
---cv_env         single 'CLIENT_NAME'     "option_envName_Verify    '\\<--cv_env\\>'"     required
+--cv-env         single 'CLIENT_NAME'     "option_envName_Verify    '\\<--cv-env\\>'"     required
 --cp=N           single ''                "option_cp_format_Verify  '\\<--cp=N\\>'"       optional
---mt=N           single ''                "option_mt_format_Verify  '\\<--mt=N\\>'"       optional
+-v=N             single ''                "option_volume_format_Verify  '\\<-v=N\\>'"     optional
 --clean          single 'none'            "option_clean_Verify      '\\<--clean\\>'"      required
 --help           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--help\\>'"       required "-h"
 --version        single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--version\\>'"    required
@@ -257,7 +265,7 @@ option_cp_format_Verify(){
 ###############################################################################
 ##
 ##  Purpose:
-##    Verify target-source specification for mt.
+##    Verify target-source specification for mounting volumes.  
 ##
 ##  Inputs:
 ##    $1 - target-source specification.
@@ -269,9 +277,10 @@ option_cp_format_Verify(){
 ##      Write error reason to STDERR.
 ##
 ###############################################################################
-option_mt_format_Verify(){
-  if ! [[ $1 =~ ^(.+):(/.+) ]]; then
-    ScriptError "Mount source-target spec: '$1' must encode a ':' immediately before its absolute target container path. Ex: './hostfile:/targetContainerLoc'."
+option_volume_format_Verify(){
+  local -r volumeSpec='^(.+):(/.*)|(/.*)'
+  if ! [[ $1 =~ $volumeSpec ]]; then
+    ScriptError "Volume specification: '$1' fails to conform to: '$volumeSpec'."
   fi
 }
 ###############################################################################
@@ -354,11 +363,11 @@ VirtCmmdExecute(){
   # set trap to destroy when something unexpected happens.
   trap_server_destroy_Set "$serverName"
   # generate mount, -v, options if specified.
-  local -r mtOptFilter='[[ $optArg =~ ^--mt=[1-9][0-9]*$ ]]'
+  local -r mtOptFilter='[[ $optArg =~ ^-v=[1-9][0-9]*$ ]]'
   local -a mtOptLst
   local -A mtOptMap
   if ! OptionsArgsFilter "$optArgLst_ref" "$optArgMap_ref" 'mtOptLst' 'mtOptMap' "$mtOptFilter" 'true'; then
-    ScriptUnwind "$LINENO" "Problem filtering mt options."
+    ScriptUnwind "$LINENO" "Problem filtering volume options."
   fi
   local mtClientOpts
   mt_options_Gen 'mtOptLst' 'mtOptMap' 'mtClientOpts'
@@ -384,7 +393,7 @@ VirtCmmdExecute(){
   # establish value for environment variable referenced by COMMANDs that
   # will resolve to Docker client container name.
   local clientName_ref
-  AssociativeMapAssignIndirect "$optArgMap_ref" '--cv_env' 'clientName_ref'
+  AssociativeMapAssignIndirect "$optArgMap_ref" '--cv-env' 'clientName_ref'
   local -r clientName_ref
   ref_simple_value_Set "$clientName_ref" "$clientName"
   # create cp argument map by filtering cli options.
@@ -418,9 +427,9 @@ VirtCmmdExecute(){
 ##    Generate docker host volume option.
 ##
 ##  Input:
-##    $1  - Array variable name of ordered mt keys.
-##    $2  - Map variable name of mt keys specified in $1 associated 
-##          to host-target container specification.
+##    $1  - Array variable name of ordered volume keys '-v1','-v2','-v3',... .
+##    $2  - Map variable name of -vN keys specified in $1 associated to  
+##          to their volume specifier.
 ##    $3  - Variable name to assign generated docker run -v option syntax.
 ##
 ###########################################################################
@@ -541,12 +550,13 @@ cp_srcTrg_Seperate(){
   local -r trgSpec_ref="$3"
 
   # seperate source spec from target.  Rely on regex greediness to include
-  # container, image reference in source part even when they include :/ 
-  if ! [[ $srcTrgSpec =~ ^(.+):(/.+) ]]; then
+  # container, image reference in source part even when they include :/ or :
+  if [[ $srcTrgSpec =~ ^(.+):(/.*) ]] || [[ $srcTrgSpec =~ ^(.+):(.*) ]]; then
+    ref_simple_value_Set "$srcSpec_ref" "${BASH_REMATCH[1]}"
+    ref_simple_value_Set "$trgSpec_ref" "${BASH_REMATCH[2]}"
+  else
     ScriptUnwind "$LINENO" "Copy source-target spec: '$srcTrgSpec' must encode a ':' immediately before its absolute target path. Ex: './hostfile:/targetLoc'."
   fi
-  ref_simple_value_Set "$srcSpec_ref" "${BASH_REMATCH[1]}"
-  ref_simple_value_Set "$trgSpec_ref" "${BASH_REMATCH[2]}"
 }
 ##############################################################################
 #TODO refactor the fuction into own module.
@@ -755,7 +765,7 @@ server_client_Iterate(){
 ###########################################################################
 client_Destroy(){
     docker    stop "$1" > /dev/null \
-    && docker rm   "$1" > /dev/null 
+    && docker rm -v  "$1" > /dev/null 
 }
 ###########################################################################
 ##
