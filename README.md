@@ -165,7 +165,11 @@ Represents the function that destroys dind server and client containers includin
 
 *'all'* short circuits ```didx```'s typical execution flow replacing it with behavior to search and destroy dind server and client containers.  The searches scours the local repository for container instances whose names regex match the naming pattern used by ```didx``` to identify candidate instances for deletion.  *'all'* then further filters the candidate instances to ensure their Docker [entrypoint](https://docs.docker.com/engine/reference/builder/#entrypoint) signatures reflect those assigned to the dind server and client containers.  A [```docker stop```](https://docs.docker.com/engine/reference/commandline/stop/) is executed for containers satisfying both filters before being destroyed by [```docker rm -v```](https://docs.docker.com/engine/reference/commandline/rm/).
 
-Use ```--clean=all``` to rid the local repository of dind server and client containers that survived prior ```didx``` invocations but are no longer needed.  For example, the running of a previous ```didx --clean=success --cp ./test.sh:/ /test.sh``` exits leaving both the dind server and client containers running because ```/test.sh``` fails.  After  debugging ```/test.sh```'s failure the execution of ```didx --clean=all``` will terminate and destroy the dind server and client containers.
+Use ```--clean=all``` to rid the local repository of dind server and client containers that survived prior ```didx``` invocations but are no longer needed.  For example, the execution of: ```didx --clean=success --cp ./test.sh:/ /test.sh``` exits leaving both the dind server and client containers running because ```/test.sh``` fails.  After  debugging ```/test.sh```'s failure the invocation of ```didx --clean=all``` will terminate and destroy the dind server and client containers.
+
+####--storage-driver
+The dind server creates a repository as an anynomous volume bound inside its container and isolated from the Docker Engine Host repository. This option determines the file system type employed by dind server to maintain its Docker repository. [storage driver](https://docs.docker.com/engine/userguide/storagedriver/imagesandcontainers/)
+
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
