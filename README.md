@@ -8,6 +8,8 @@ Use didx to create a Docker test environment that's automatically destroyed afte
 &nbsp;&nbsp;&nbsp;&nbsp;[--pull](#--pull)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--cp[],-v[]](#--cp-v)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--clean](#--clean)  
+&nbsp;&nbsp;&nbsp;&nbsp;[--storage-driver](#--storage-driver)  
+&nbsp;&nbsp;&nbsp;&nbsp;[--cv-env](#--cv-env)  
 [Examples](#examples)  
 [Installing](#install)  
 [Testing](#testing)  
@@ -72,7 +74,7 @@ OPTIONS:
                                   containers stored locally by the Docker server container.
                                   Value defaults to the one utilized by the Docker instance
                                   managing the Docker server container.  
-    --cv_env=CLIENT_NAME       Environment variable name which contains the Docker client's
+    --cv-env=CLIENT_NAME       Environment variable name which contains the Docker client's
                                  container name.  Use in COMMAND to identify client container.
     -h,--help=false            Don't display this help message.
     --version=false            Don't display version info.
