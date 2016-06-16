@@ -6,7 +6,7 @@ Use didx to create a Docker test environment that's automatically destroyed afte
 [Options](#options)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--sv,--cv](#--sv--cv)  
 &nbsp;&nbsp;&nbsp;&nbsp;[--pull](#--pull)  
-&nbsp;&nbsp;&nbsp;&nbsp;[--pull](#--cp)  
+&nbsp;&nbsp;&nbsp;&nbsp;[--cp[],-v[]](#--cp-v)  
 [Examples](#examples)  
 [Installing](#install)  
 [Testing](#testing)  
