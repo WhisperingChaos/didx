@@ -175,7 +175,7 @@ The dind server creates a repository as an anynomous volume bound inside its con
 ####--cv-en
 Specifies an environment variable name assigned the Docker container name of the client container.  A  ```docker exec``` writing COMMANDs   
 
-Each COMMAND encoded to execute within the dind client container must begin with a flavor of ```docker exec [OPTIONS] CONTAINER...```.  The Docker Engine Host runs this initial by first removing the ```docker exec [OPTIONS] CONTAINER``` prefix and then forwarding its command to the dind container for execution.  If this forwarded command portion wishes to invoke a docker command requiring a response from the dind server, the command must begin ```docker [OPTIONS] COMMAND```.  For example, to list all the images known to the dind server the implemented command would appear as: 'docker exec <DIND-CONTAINER-NAME> docker images -a' 
+Each COMMAND encoded to execute within the dind client container must begin with some flavor of ```docker exec [OPTIONS] CONTAINER...```.  When the Docker Engine Host runs this command, it removes the ```docker exec [OPTIONS] CONTAINER``` prefix and then forwards its command portion to the dind container for execution.  If this forwarded command wishes to invoke a docker command requiring a response from the dind server, the forwarded command must begin ```docker [OPTIONS] COMMAND```.  For example, to list all the images known to the dind server the implemented command would appear as: 'docker exec <DIND-CONTAINER-NAME> docker images -a' 
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
