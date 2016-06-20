@@ -172,7 +172,7 @@ The dind server creates a repository as an anynomous volume bound inside its con
 
 ```didx``` by default configures the dind server ```--storage-driver``` value to reflect the one employed by the Docker Engine Host.  This default value is displayed when viewing ```--help```.  The rational behind this scheme promotes the primary aim of ```didx``` to offer a test environment within the Docker Engine Host, therefore, the dind server container inherits its ```--storage-driver``` value from its Docker Engine Host.  To circumvent this scheme, use ```--storage-driver``` to specify the desired type.
 
-####--cv-en
+####--cv-env
 Specifies an environment variable name assigned the Docker container name of the client container.  A  ```docker exec``` writing COMMANDs   
 
 Each COMMAND encoded to execute within the dind client container must begin with some flavor of ```docker exec [OPTIONS] CONTAINER...```.  When the Docker Engine Host runs this command, it removes the ```docker exec [OPTIONS] CONTAINER``` prefix and then forwards its command portion to the dind container for execution.  If this forwarded command wishes to invoke a docker command requiring a response from the dind server, the forwarded command must begin ```docker [OPTIONS] COMMAND```.  For example, to list all the images known to the dind server the implemented command would appear as: 'docker exec <DIND-CONTAINER-NAME> docker images -a' 
