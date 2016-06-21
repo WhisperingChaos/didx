@@ -175,7 +175,11 @@ The dind server creates a repository as an anynomous volume bound inside its con
 ####--cv-env
 Specifies an environment variable name assigned the Docker container name of the client container.  A  ```docker exec``` writing COMMANDs   
 
-Each COMMAND encoded to execute within the dind client container must begin with some flavor of ```docker exec [OPTIONS] CONTAINER...```.  When the Docker Engine Host runs this command, it removes the ```docker exec [OPTIONS] CONTAINER``` prefix and then forwards its command portion to the dind container for execution.  If this forwarded command wishes to invoke a docker command requiring a response from the dind server, the forwarded command must begin ```docker [OPTIONS] COMMAND```.  For example, to list all the images known to the dind server the implemented command would appear as: 'docker exec <DIND-CONTAINER-NAME> docker images -a' 
+Each COMMAND encoded to execute within the dind client container must begin with some flavor of ```docker exec [OPTIONS] CONTAINER...```.  When the Docker Engine Host runs this command, it removes the ```docker exec [OPTIONS] CONTAINER``` prefix and then forwards the command portion to the dind container for execution.  If this forwarded command wishes to invoke a docker command requiring a response from the dind server, the forwarded command must begin ```docker [OPTIONS] COMMAND```.  For example, to list all the images known to the dind server the implemented command would appear as: ```'docker exec <DIND-CONTAINER-NAME> docker images -a'```.
+
+To avoid finger cramps resulting from typing the entire prefix for every COMMAND, ```didx``` and the Docker provided dind client container ENTRYPOINT ```"docker-entrypoint.sh"``` each contribute a portion of the prefix to construct a complete "default prefix".  ```didx``` will prepend ```docker exec <DIND-CONTAINER-NAME> docker-entrypoint.sh``` to the COMMAND when COMMAND begins with tokens other than ```docker exec```.  For example, when given the COMMAND ```'images -a'``` as an argument, ```didx``` generates ```docker exec <DIND-CONTAINER-NAME> docker-entrypoint.sh images -a'```.  
+
+
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
