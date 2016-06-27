@@ -173,7 +173,7 @@ The dind server creates a repository as an anynomous volume bound inside its con
 ```didx``` by default configures the dind server ```--storage-driver``` value to reflect the one employed by the Docker Engine Host.  Use ```didx```'s ```--help``` option to display this value.  This convention aligns with aim of ```didx```: to offer a test environment within the Docker Engine Host, therefore, the dind server container inherits its ```--storage-driver``` value from its Docker Engine Host.  To circumvent this scheme, use ```--storage-driver``` to specify the desired type.
 
 ####--cv-env
-Specifies an environment variable name assigned the Docker container name of the client container.  Use this option to change the variable name from ```DIND_CLIENT_CONTAINER``` to the desired one.     ```docker exec``` writing COMMANDs   
+Specifies an environment variable name assigned the Docker container name of the dind client container.  Use this option to change the variable name from ```DIND_CLIENT_CONTAINER``` to the desired one.  Although its use is unlikely, this option supports the encoding of the ```docker exec [OPTIONS] CONTAINER``` that must prefix every ```didx``` COMMAND.     
 
 Each COMMAND encoded to execute within the dind client container must begin with some flavor of ```docker exec [OPTIONS] CONTAINER...```.  When the Docker Engine Host runs this command, it removes the ```docker exec [OPTIONS] CONTAINER``` prefix and then forwards the command portion to the dind container for execution.  If this forwarded command wishes to invoke a docker command requiring a response from the dind server, the forwarded command must begin ```docker [OPTIONS] COMMAND```.  For example, to list all the images known to the dind server the implemented command would appear as: ```'docker exec <DIND_CONTAINER_NAME> docker images -a'```.
 
@@ -187,7 +187,7 @@ For the first two types ```docker-entrypoint.sh``` will affix the ```<COMMAND>``
 
 In addition to automatically prefixing Docker related commands, ```docker-entrypoint.sh``` establishes the value of the DOCKER_HOST environment variable for itself and its child processes.  This behavior is critical to the successful execution of scripts invoked by COMMAND containing Docker commands, like ```docker build ...``` for without it, Docker commands will fail with messages indicating an inability to connect to the dind server.
 
-For example, when given the COMMAND ```'images -a'``` as an argument, ```didx``` generates the prefix ```docker exec <DIND_CONTAINER_NAME> docker-entrypoint.sh``` and then concantenates the COMMAND ```images -a``` to it to form:   ```'docker exec <DIND_CONTAINER_NAME> docker-entrypoint.sh images a'```.  This generated command is then executed by the Docker Engine Host which then removes ```docker exec <DIND_CONTAINER_NAME>``` and forwards the command portion ```docker-entrypoint.sh images a'``` to the dind client container.
+For example, when given the COMMAND ```'images -a'``` as an argument, ```didx``` generates the prefix ```docker exec <DIND_CONTAINER_NAME> docker-entrypoint.sh``` and then concantenates the COMMAND ```images -a``` to it forming:   ```'docker exec <DIND_CONTAINER_NAME> docker-entrypoint.sh images a'```.  This generated command is then executed by the Docker Engine Host which removes ```docker exec <DIND_CONTAINER_NAME>``` and forwards the command portion ```docker-entrypoint.sh images a'``` to the dind client container.
 
 
 
