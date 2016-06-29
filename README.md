@@ -183,7 +183,7 @@ To avoid finger cramps resulting from typing the entire prefix for every COMMAND
 *  a Docker command, like ```run ...```,
 *  a Docker command beginning with a Docker Engine option, like ```-D images```,
 *  and everything else (non-docker related)
-For the first two types ```docker-entrypoint.sh``` will affix the ```<COMMAND>``` string with ```docker ``` before executing ```<COMMAND>``` while for the third type ```docker-entrypoint.sh``` invokes ```<COMMAND>``` without affecting it.
+For the first two types ```docker-entrypoint.sh``` will affix ```docker``` to the ```<COMMAND>``` string before executing ```<COMMAND>``` while for the third type ```docker-entrypoint.sh``` invokes ```<COMMAND>``` without affecting it.
 
 In addition to automatically prefixing Docker related commands, ```docker-entrypoint.sh``` establishes the value of the DOCKER_HOST environment variable for itself and its child processes.  This behavior is critical to the successful execution of scripts invoked by COMMAND containing Docker commands, like ```docker build ...``` for without it, Docker commands will fail with messages indicating an inability to connect to the dind server.
 
