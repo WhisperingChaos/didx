@@ -34,52 +34,54 @@ Usage: didx.sh [OPTIONS] {| COMMAND [COMMAND] ...}
   this script.  
 
 OPTIONS:
-    --sv                       Docker server version.  Defaults to most recent
-                                 stable (public) Docker Engine version.  Click
-                                 https://hub.docker.com/r/library/docker/tags/ to
-                                 view supported versions.
-    --cv                       Docker client version.  Defaults to --sv value.
-    -p,--pull=false            Perform explicit docker pull before running server/client.
-    --cp[]                     Copy files from source location into container running 
-                                 Docker client. (Optional)  
-                                 Format: <SourceSpec>:<AbsoluteClientContainerPath>
-                                 'docker cp' used when SourceSpec referrs to host file or
-                                 input stream.  Otherwise, when source refers to 
-                                 container or image, cp performed by 'dkrcp'.
-    --mt[]                     Mount host file system references into container running
-                                 Docker client. (Optional)
-                                 Format: <HostFilePath>:<AbsoluteClientContainerPath>
-                                 'docker run -v' option used to implement mount.
-    --clean=none               After executing all COMMANDs, sanitize environment.  Note
-                                 if an option value preserves the server's data volume,
-                                 you must manually delete it using the -v option when 
-                                 removing the server's container.
-                                 none:    Leave server & client containers running
-                                          in background.  Preserve server data volume.
-                                 success: When all COMMANDs succeed, terminate and
-                                          remove server & client containers.
-                                          Delete server data volume.
-                                 failure: When at least one COMMAND fails, terminate
-                                          and remove server & client containers
-                                          Delete  server data volume.
-                                 anycase: Regardless of COMMAND exit code, terminate
-                                          and remove server, client containers.
-                                          Delete server data volume.
-                                 all:     Remove all server, client containers from
-                                          local repository. If necessary, terminate
-                                          running instances.
-                                          Delete all server data volumes.
-    -s,--storage-driver=aufs  Docker storage driver name.  Determines method
-                                  applied to physically represent and manage images and
-                                  containers stored locally by the Docker server container.
-                                  Value defaults to the one utilized by the Docker instance
-                                  managing the Docker server container.  
-    --cv-env=CLIENT_NAME       Environment variable name which contains the Docker client's
-                                 container name.  Use in COMMAND to identify client container.
-    -h,--help=false            Don't display this help message.
-    --version=false            Don't display version info.
-
-For more help: https://github.com/WhisperingChaos/didx/blob/master/README.md#didx
+  --sv                       Docker server version.  Defaults to most recent
+                               stable (public) Docker Engine version.  Click
+                               https://hub.docker.com/r/library/docker/tags/ to
+                               view supported versions.
+  --cv                       Docker client version.  Defaults to --sv value.
+  -p,--pull=false            Perform explicit docker pull before running server/client.
+  --cp[]                     Copy files from source location into container running 
+                               Docker client. (Optional)  
+                               Format: <SourceSpec>:<AbsoluteClientContainerPath>
+                                 <SourceSpec>-><hostFilePath>
+                                 <SourceSpec>-><stream>->-
+                                 <SourceSpec>->{<containerName>|<UUID>}:<AbsoluteContainerPath>
+                                 <SourceSpec>->{<imageName>[:<tag>]|<UUID>}::<AbsoluteImagePath>
+                               'docker cp' used when <SourceSpec> referrs to host file or
+                               input stream.  Otherwise, when source refers to 
+                               container or image, cp performed by 'dkrcp'.
+  -v[]                       Mount host file system references or create an anynomous
+                               volume in the container running Docker client. (Optional)
+                               Format: [{<HostFilePath>|<VolumeFilePath>}:]<AbsoluteClientContainerPath>
+                               'docker run -v' option used to implement mount.
+  --clean=none               After executing all COMMANDs, sanitize environment.  Note
+                               if an option value preserves the server's data volume,
+                               you must manually delete it using the -v option when 
+                               removing the server's container.
+                               none:    Leave server & client containers running
+                                        in background.  Preserve server data volume.
+                               success: When all COMMANDs succeed, terminate and
+                                        remove server & client containers.
+                                        Delete server data volume.
+                               failure: When at least one COMMAND fails, terminate
+                                        and remove server & client containers
+                                        Delete  server data volume.
+                               anycase: Regardless of COMMAND exit code, terminate
+                                        and remove server, client containers.
+                                        Delete server data volume.
+                               all:     Remove all server, client containers from
+                                        local repository. If necessary, terminate
+                                        running instances.
+                                        Delete all server data volumes.
+  -s,--storage-driver        Docker storage driver name.  Determines method
+                                applied to physically represent and manage images and
+                                containers stored locally by the Docker server container.
+                                Value defaults to the one utilized by the Docker instance
+                                managing the Docker server container.  
+  --cv-env=DIND_CLIENT_NAME  Environment variable name which contains the Docker client's
+                               container name.  Use in COMMAND to identify client container.
+  -h,--help=false            Don't display this help message.
+  --version=false            Don't display version info.
 
 ```
 A detailed explaination of [Docker in Docker (dind)](https://hub.docker.com/_/docker/).
@@ -189,7 +191,7 @@ In addition to automatically prefixing Docker related commands, ```docker-entryp
 
 For example, when given the COMMAND ```'images -a'``` as an argument, ```didx``` generates the prefix ```docker exec <DIND_CLIENT_NAME> docker-entrypoint.sh``` and then concantenates the COMMAND ```images -a``` to it forming:   ```'docker exec <DIND_CLIENT_NAME> docker-entrypoint.sh images a'```.  This generated command is then executed by the Docker Engine Host which removes ```docker exec <DIND_CLIENT_NAME>``` and forwards the command portion ```docker-entrypoint.sh images a'``` to the dind client container.
 ##Examples
-'''
+```
 #Ex 1 - start the latest version of the dind server & client and run them in the background
 dockerHost:didx 
 Inform: dind server named: 'dind_22789_server_latest' successfully started.
@@ -229,8 +231,7 @@ Inform: dind client named: 'dind_23563_client_1.9' terminated & destroyed.
 Inform: dind server named: 'dind_23563_server_1.10' terminated & destroyed.
 Inform: dind client named: 'dind_22789_client_latest' terminated & destroyed.
 Inform: dind server named: 'dind_22789_server_latest' terminated & destroyed.
-
-
+```
 
 ##Terms
 **Docker Engine Host**<a id="TermsDockerEngineHost"></a> - refers to the Docker server instance that manages (runs, terminates) the dind server and associated client containers.
