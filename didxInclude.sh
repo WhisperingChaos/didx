@@ -136,7 +136,7 @@ OPTIONS:
                                  <SourceSpec>-><hostFilePath>
                                  <SourceSpec>-><stream>->-
                                  <SourceSpec>->{<containerName>|<UUID>}:<AbsoluteContainerPath>
-                                 <SourceSpec>->{<imageName>|<UUID>}[:<tag>]::<AbsoluteImagePath>
+                                 <SourceSpec>->{<imageName>[:<tag>]|<UUID>}::<AbsoluteImagePath>
                                'docker cp' used when <SourceSpec> referrs to host file or
                                input stream.  Otherwise, when source refers to 
                                container or image, cp performed by 'dkrcp'.
@@ -168,7 +168,7 @@ OPTIONS:
                                 containers stored locally by the Docker server container.
                                 Value defaults to the one utilized by the Docker instance
                                 managing the Docker server container.  
-  --cv-env=CLIENT_NAME       Environment variable name which contains the Docker client's
+  --cv-env=DIND_CLIENT_NAME       Environment variable name which contains the Docker client's
                                container name.  Use in COMMAND to identify client container.
   -h,--help=false            Don't display this help message.
   --version=false            Don't display version info.
@@ -211,7 +211,7 @@ ArgN             single ''                ''                                    
 --cv             single ''                ''                                              optional
 --pull           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--pull\\>'"       required "-p"
 --storage-driver single '$stgDrvrDefault' ''                                              required "-s" 
---cv-env         single 'CLIENT_NAME'     "option_envName_Verify    '\\<--cv-env\\>'"     required
+--cv-env         single 'DIND_CLIENT_NAME' "option_envName_Verify    '\\<--cv-env\\>'"    required
 --cp=N           single ''                "option_cp_format_Verify  '\\<--cp=N\\>'"       optional
 -v=N             single ''                "option_volume_format_Verify  '\\<-v=N\\>'"     optional
 --clean          single 'none'            "option_clean_Verify      '\\<--clean\\>'"      required
@@ -337,8 +337,16 @@ VirtCmmdExecute(){
   # obtain server version
   local serverVersion
   AssociativeMapAssignIndirect "$optArgMap_ref" '--sv' 'serverVersion'
-  if [ "$serverVersion" == 'latest' ]; then
-    local -r stag="dind"
+  # normalize server version so it's either 'latest' or typical version format by
+  # removing '[-]?dind' as the server must be some form of 'dind'
+  if   [ "$serverVersion" == 'latest' ]; then
+    local -r stag='dind'
+  elif [ "$serverVersion" == 'dind' ]; then
+    local -r stag='dind'
+    serverVersion='latest'
+  elif [[ "$serverVersion" =~ (.+)-dind ]]; then
+    serverVersion="${BASH_REMATCH[1]}"
+    local -r stag="${serverVersion}-dind"
   else
     local -r stag="${serverVersion}-dind"
   fi
@@ -628,7 +636,6 @@ command_Execute(){
   local -r cmdArgLst_ref="$1"
   local -r cmdArgMap_ref="$2"
   local -r clientName_ref="$3"
-
   # make selected variable name client name visible
   eval local \-r clientName=\"\$$clientName_ref\"
   local cmdTmplt
@@ -727,8 +734,8 @@ server_client_Clean(){
 server_client_Iterate(){
   local -r pattern="$1"  # currently ignored
   local -r funExec="$2"
-  local -r dindpatternClient='dind_[0-9]+_client_([0-9.]+|latest)'
-  local -r dindpatternServer='dind_[0-9]+_server_([0-9.]+-dind|latest)'
+  local -r dindpatternClient='dind_[0-9]+_client_([0-9.rcgit-]+|latest)'
+  local -r dindpatternServer='dind_[0-9]+_server_([0-9.rc-]+|latest)'
 
   local containerType
   local containerName
