@@ -236,7 +236,7 @@ Inform: dind server named: 'dind_22789_server_latest' terminated & destroyed.
 #Ex 4 - Run a series of commands to pull, report on, run, and stop an alpine
 #       image via latest version of dind. Once complete remove the dind
 #       server and client without regard to success/failure.
-dockerHost:~/Desktop/project/didx$ ./didx.sh --clean anycase 'pull alpine' 'images' 'run -dit --name alpine_container alpine sh' 'ps' 'stop alpine_container' 
+dockerHost:didx --clean anycase 'pull alpine' 'images' 'run -dit --name alpine_container alpine sh' 'ps' 'stop alpine_container' 
 Inform: dind server named: 'dind_1118_server_latest' successfully started.
 Inform: dind client named: 'dind_1118_client_latest' successfully started.
 Using default tag: latest
