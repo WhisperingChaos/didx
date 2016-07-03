@@ -9,15 +9,15 @@
 declare TRAP_SERVER_NAME
 declare TRAP_CLIENT_NAME
 trap_server_Destroy(){
-  server_Destroy "$TRAP_SERVER_NAME"
+  container_Destroy "$TRAP_SERVER_NAME"
 }
 trap_server_destroy_Set(){
   TRAP_SERVER_NAME="$1"
   trap 'trap_server_Destroy' EXIT
 }
 trap_server_client_Destroy(){
-  client_Destroy "$TRAP_CLIENT_NAME"
-  server_Destroy "$TRAP_SERVER_NAME" 
+  container_Destroy "$TRAP_CLIENT_NAME"
+  container_Destroy "$TRAP_SERVER_NAME" 
 }
 trap_server_client_destroy_Set(){
   TRAP_SERVER_NAME="$1"
@@ -168,7 +168,7 @@ OPTIONS:
                                 containers stored locally by the Docker server container.
                                 Value defaults to the one utilized by the Docker instance
                                 managing the Docker server container.  
-  --cv-env=DIND_CLIENT_NAME       Environment variable name which contains the Docker client's
+  --cv-env=DIND_CLIENT_NAME  Environment variable name which contains the Docker client's
                                container name.  Use in COMMAND to identify client container.
   -h,--help=false            Don't display this help message.
   --version=false            Don't display version info.
@@ -764,44 +764,18 @@ server_client_Iterate(){
 ###########################################################################
 ##
 ##  Purpose:
-##    Destroy dind client.
+##    Destroy dind server and client.
 ##
 ##  Input:
-##    $1  - Container name for dind client. 
-##
-###########################################################################
-client_Destroy(){
-    docker    stop "$1" > /dev/null \
-    && docker rm -v  "$1" > /dev/null 
-}
-###########################################################################
-##
-##  Purpose:
-##    Destroy dind server and it's repository.
-##
-##  Input:
-##    $1  - Container name for dind server. 
-##
-###########################################################################
-server_Destroy(){
-    docker    stop  "$1" > /dev/null \
-    && docker rm -v "$1" > /dev/null 
-}
-###########################################################################
-##
-##  Purpose:
-##    Destroy dind server or client.
-##
-##  Input:
-##    $1  - Container type: 'client' or 'server'
-##    $2  - Container name. 
+##    $1  - Server container name.
+##    $2  - Client container name. 
 ##
 ###########################################################################
 server_client_Destroy(){
   local -r serverName="$1" 
   local -r clientName="$2"
 
-  client_Destroy "$clientName" && server_Destroy  "$serverName"
+  container_Destroy "$clientName" && container_Destroy "$serverName"
 }
 ###########################################################################
 ##
@@ -817,8 +791,24 @@ server_or_client_Destroy(){
   local -r containerType="$1" 
   local -r containerName="$2"
 
-  ${containerType}_Destroy "$containerName" \
+  container_Destroy "$containerName" \
   && dind_Report "${containerType}" "$containerName" "$STATUS_TERM_DSTRY"
+}
+###########################################################################
+##
+##  Purpose:
+##    Destroy container and it's repository.  The dind server is always 
+##    configured with an anonymous volume.  Since the dind client accepts
+##    docker volume mounts (-v), specifying one or more anonymous volumes
+##    is possible, therefore, remove them if specified.
+##
+##  Input:
+##    $1  - Container name.
+##
+###########################################################################
+container_Destroy(){
+    docker    stop  "$1" > /dev/null \
+    && docker rm -v "$1" > /dev/null 
 }
 ###########################################################################
 ##
