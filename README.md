@@ -192,21 +192,25 @@ In addition to automatically prefixing Docker related commands, ```docker-entryp
 For example, when given the COMMAND ```'images -a'``` as an argument, ```didx``` generates the prefix ```docker exec <DIND_CLIENT_NAME> docker-entrypoint.sh``` and then concantenates the COMMAND ```images -a``` to it forming:   ```'docker exec <DIND_CLIENT_NAME> docker-entrypoint.sh images a'```.  This generated command is then executed by the Docker Engine Host which removes ```docker exec <DIND_CLIENT_NAME>``` and forwards the command portion ```docker-entrypoint.sh images a'``` to the dind client container.
 ##Examples
 ```
-#Ex 1 - start the latest version of the dind server & client and run them in the background
+#########################################################################################
+# Ex 1 - start the latest version of the dind server & client and run them in the background
+#########################################################################################
 dockerHost:didx 
 Inform: dind server named: 'dind_22789_server_latest' successfully started.
 Inform: dind client named: 'dind_22789_client_latest' successfully started.
 Inform: dind server named: 'dind_22789_server_latest' remains running.
 Inform: dind client named: 'dind_22789_client_latest' remains running.
-
-#Ex 2 - start dind server version 1.10 & dind client 1.9 and run them in the background
+#########################################################################################
+# Ex 2 - start dind server version 1.10 & dind client 1.9 and run them in the background
+#########################################################################################
 dockerHost:didx --sv 1.10 --cv 1.9
 Inform: dind server named: 'dind_23563_server_1.10' successfully started.
 Inform: dind client named: 'dind_23563_client_1.9' successfully started.
 Inform: dind server named: 'dind_23563_server_1.10' remains running.
 Inform: dind client named: 'dind_23563_client_1.9' remains running.
-
-#Ex 2.1 - attach to the client and run 'docker version'
+#########################################################################################
+# Ex 2.1 - attach to the client and run 'docker version'
+#########################################################################################
 dockerHost:docker attach dind_23563_client_1.9
 / # docker version
 Client:
@@ -225,17 +229,19 @@ Server:
  Built:        2016-03-10T21:49:11.235199091+00:00
  OS/Arch:      linux/amd64
 / # 
-
-#Ex 3 - Terminate & destroy the dind servers and clients initiated by Ex 1 & Ex 2
+#########################################################################################
+# Ex 3 - Terminate & destroy the dind servers and clients initiated by Ex 1 & Ex 2
+#########################################################################################
 dockerHost:didx./didx.sh --clean all
 Inform: dind client named: 'dind_23563_client_1.9' terminated & destroyed.
 Inform: dind server named: 'dind_23563_server_1.10' terminated & destroyed.
 Inform: dind client named: 'dind_22789_client_latest' terminated & destroyed.
 Inform: dind server named: 'dind_22789_server_latest' terminated & destroyed.
-
-#Ex 4 - Run a series of commands to pull, report on, run, and stop an alpine
-#       image via latest version of dind. Once complete remove the dind
-#       server and client without regard to success/failure.
+#########################################################################################
+# Ex 4 - Run a series of commands to pull, report on, run, and stop an alpine
+#        image via latest version of dind. Once complete remove the dind
+#        server and client without regard to success/failure.
+#########################################################################################
 dockerHost:didx --clean anycase 'pull alpine' 'images' 'run -dit --name alpine_container alpine sh' 'ps' 'stop alpine_container' 
 Inform: dind server named: 'dind_1118_server_latest' successfully started.
 Inform: dind client named: 'dind_1118_client_latest' successfully started.
@@ -260,6 +266,13 @@ alpine_container
 Inform: Command: 'docker exec dind_1118_client_latest docker-entrypoint.sh stop alpine_container' successfully terminated.
 Inform: dind server named: 'dind_1118_server_latest' terminated & destroyed.
 Inform: dind client named: 'dind_1118_client_latest' terminated & destroyed.
+#########################################################################################
+# Ex 5 - 
+#
+#
+#
+#
+#########################################################################################
 
 ```
 
