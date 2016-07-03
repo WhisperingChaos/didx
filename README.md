@@ -205,6 +205,7 @@ Inform: dind server named: 'dind_23563_server_1.10' successfully started.
 Inform: dind client named: 'dind_23563_client_1.9' successfully started.
 Inform: dind server named: 'dind_23563_server_1.10' remains running.
 Inform: dind client named: 'dind_23563_client_1.9' remains running.
+
 #Ex 2.1 - attach to the client and run 'docker version'
 dockerHost:docker attach dind_23563_client_1.9
 / # docker version
@@ -231,6 +232,35 @@ Inform: dind client named: 'dind_23563_client_1.9' terminated & destroyed.
 Inform: dind server named: 'dind_23563_server_1.10' terminated & destroyed.
 Inform: dind client named: 'dind_22789_client_latest' terminated & destroyed.
 Inform: dind server named: 'dind_22789_server_latest' terminated & destroyed.
+
+#Ex 4 - Run a series of commands to pull, report on, run, and stop an alpine
+#       image via latest version of dind. Once complete remove the dind
+#       server and client without regard to success/failure.
+dockerHost:~/Desktop/project/didx$ ./didx.sh --clean anycase 'pull alpine' 'images' 'run -dit --name alpine_container alpine sh' 'ps' 'stop alpine_container' 
+Inform: dind server named: 'dind_1118_server_latest' successfully started.
+Inform: dind client named: 'dind_1118_client_latest' successfully started.
+Using default tag: latest
+latest: Pulling from library/alpine
+e110a4a17941: Pulling fs layer
+e110a4a17941: Verifying Checksum
+e110a4a17941: Download complete
+e110a4a17941: Pull complete
+Digest: sha256:3dcdb92d7432d56604d4545cbd324b14e647b313626d99b889d0626de158f73a
+Status: Downloaded newer image for alpine:latest
+Inform: Command: 'docker exec dind_1118_client_latest docker-entrypoint.sh pull alpine' successfully terminated.
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+alpine              latest              4e38e38c8ce0        9 days ago          4.799 MB
+Inform: Command: 'docker exec dind_1118_client_latest docker-entrypoint.sh images' successfully terminated.
+7d64a075f70d8a4476024add123d2011154c261de47e8905f204bb7c3dbb3911
+Inform: Command: 'docker exec dind_1118_client_latest docker-entrypoint.sh run -dit --name alpine_container alpine sh' successfully terminated.
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                  PORTS               NAMES
+7d64a075f70d        alpine              "sh"                1 seconds ago       Up Less than a second                       alpine_container
+Inform: Command: 'docker exec dind_1118_client_latest docker-entrypoint.sh ps' successfully terminated.
+alpine_container
+Inform: Command: 'docker exec dind_1118_client_latest docker-entrypoint.sh stop alpine_container' successfully terminated.
+Inform: dind server named: 'dind_1118_server_latest' terminated & destroyed.
+Inform: dind client named: 'dind_1118_client_latest' terminated & destroyed.
+
 ```
 
 ##Terms
