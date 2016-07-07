@@ -270,7 +270,7 @@ Inform: dind client named: 'dind_1118_client_latest' terminated & destroyed.
 # Ex 5 - Build and run a simple golang "goodbye" image within the context of the dind 
 #        client container.  The input Docker context required to create the 
 #        image along with the Bash script directing its build and execution is mounted
-#        into the dind client's file system.  After running this bash script terminate
+#        into the dind client's file system.  After running this bash script, terminate
 #        and destroy the dind server and client containers.
 #        
 #       Options explained:
@@ -281,8 +281,8 @@ Inform: dind client named: 'dind_1118_client_latest' terminated & destroyed.
 #         "-v /home/secure/Desktop/project/didx/test:/mount/golang"  Mount host file
 #             directory containing golang build context and Bash script.  Bash script
 #             directs the construction of the "goodbye" image and executes it as a container.
-#         "/mount/golang/goodbyedind.sh"  Command argument to execute the build and 
-#             then run the "goodbye" container.
+#         "/mount/golang/goodbyedind.sh"  Command to execute the build and then run
+#             the "goodbye" container.
 #
 #       Local Docker Engine context:
 ##         ls -l /home/secure/Desktop/project/didx/test
