@@ -285,7 +285,7 @@ Inform: dind client named: 'dind_1118_client_latest' terminated & destroyed.
 #             the "goodbye" container.
 #
 #       Local Docker Engine context:
-##         ls -l /home/secure/Desktop/project/didx/test
+#         ls -l /home/secure/Desktop/project/didx/test
 #             drwxrwxr-x 2 secure secure 4096 Jul  3 22:33 build
 #             -rwxrwxr-x 1 secure secure   65 Jul  3 22:46 goodbyedind.sh
 #         cat goodbyedind.sh
