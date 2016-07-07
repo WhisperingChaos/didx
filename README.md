@@ -267,12 +267,76 @@ Inform: Command: 'docker exec dind_1118_client_latest docker-entrypoint.sh stop 
 Inform: dind server named: 'dind_1118_server_latest' terminated & destroyed.
 Inform: dind client named: 'dind_1118_client_latest' terminated & destroyed.
 #########################################################################################
-# Ex 5 - 
+# Ex 5 - Build and run a simple golang "goodbye" image within the context of the dind 
+#        client container.  The input Docker context required to create the 
+#        image along with the Bash script directing its build and execution is mounted
+#        into the dind client's file system.  After running this bash script terminate
+#        and destroy the dind server and client containers.
+#        
+#       Options explained:
+#         "--clean anycase"  Apply 'docker stop' then 'docker rm -v' to dind server and
+#             client containers without regard to the Bash script's outcome.
+#         "-v /mount/golang"  Create an anonymous volume in dind client to mount build
+#             context from host file system.
+#         "-v /home/secure/Desktop/project/didx/test:/mount/golang"  Mount host file
+#             directory containing golang build context and Bash script.  Bash script
+#             directs the construction of the "goodbye" image and executes it as a container.
+#         "/mount/golang/goodbyedind.sh"  Command argument to execute the build and 
+#             then run the "goodbye" container.
 #
-#
-#
+#       Local Docker Engine context:
+##         ls -l /home/secure/Desktop/project/didx/test
+#             drwxrwxr-x 2 secure secure 4096 Jul  3 22:33 build
+#             -rwxrwxr-x 1 secure secure   65 Jul  3 22:46 goodbyedind.sh
+#         cat goodbyedind.sh
+#             docker build -t goodbye  /mount/golang/build 
+#             docker run goodbye
+#         ls -l /home/secure/Desktop/project/didx/test/build
+#             -rw-rw-r-- 1 secure secure  25 Jul  3 22:24 Dockerfile
+#             -rw-rw-r-- 1 secure secure 144 Jul  3 22:33 goodbye.go
+#         cat Dockerfile
+#             FROM golang:1.6-onbuild
+#         cat goodby.go
+#             package main
+#             import "fmt"
+#             func main() {
+#               fmt.Println("Goodbye cruel world I'm leaving you today. Goodbye. Goodbye. Goodbye. - Pink Floyd")
+#             }
 #
 #########################################################################################
+didx.sh --clean anycase  -v /mount/golang -v /home/secure/Desktop/project/didx/test:/mount/golang /mount/golang/goodbyedind.sh
+Inform: dind server named: 'dind_10407_server_latest' successfully started.
+Inform: dind client named: 'dind_10407_client_latest' successfully started.
+Sending build context to Docker daemon 3.072 kB
+Step 1 : FROM golang:1.6-onbuild
+1.6-onbuild: Pulling from library/golang
+5c90d4a2d1a8: Pulling fs layer
+ab30c63719b1: Pulling fs layer
+...
+...
+...
+79618f9f23cb: Pull complete
+Digest: sha256:4a5e529c26e40e3a4aa0c615603078987b9b53f1ee42c98aa96e296c34fb38e8
+Status: Downloaded newer image for golang:1.6-onbuild
+# Executing 3 build triggers...
+Step 1 : COPY . /go/src/app
+Step 1 : RUN go-wrapper download
+ ---> Running in d49c7d9c3bdc
++ exec go get -v -d
+Step 1 : RUN go-wrapper install
+ ---> Running in c6a3080bf143
++ exec go install -v
+app
+ ---> ded5fb6e7620
+Removing intermediate container 08c6074544bc
+Removing intermediate container d49c7d9c3bdc
+Removing intermediate container c6a3080bf143
+Successfully built ded5fb6e7620
++ exec app
+Goodbye cruel world I'm leaving you today. Goodbye. Goodbye. Goodbye. - Pink Floyd
+Inform: Command: 'docker exec dind_10407_client_latest docker-entrypoint.sh /mount/golang/goodbyedind.sh' successfully terminated.
+Inform: dind server named: 'dind_10407_server_latest' terminated & destroyed.
+Inform: dind client named: 'dind_10407_client_latest' terminated & destroyed.
 
 ```
 
