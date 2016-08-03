@@ -14,11 +14,11 @@ Use didx to create a Docker test environment that's automatically destroyed afte
 &nbsp;&nbsp;&nbsp;&nbsp;[--cv-env](#--cv-env)  
 [Examples](#examples)  
 [Installing](#install)  
-[Testing](#testing)  
-[Security](#security)
-[Networking](#networking)
+[Testing](#testing)   
+[Security](#security)  
+[Networking](#networking)  
 [Warning Label](#warning-label)  
-[Motivation](#motivation)  
+[Motivation](#motivation) 
 [License](#license)  
 ```
 
@@ -348,7 +348,7 @@ Inform: dind client named: 'dind_10407_client_latest' terminated & destroyed.
 The AppArmor module exists within the dind server container (this is probably "wrong" they are probably mounted, however, none of the suporting inspection utilities, like aa-status, appear within the image.  Therefore, it's currently difficult to determine if apparmor is enabled and applying custom policies.  I'm still not sure if AppArmor is fully encapsulated within dind - most likely not as it's a kernel module, however, that would mean that something else isn't working as I anticipated because containers, within the dind container network, using their own custom apparmor profiles don't appear in the information generated ```aa-status``` when executed within the context of the Docker Engine Host.  Need to further investigate this behavior and update this section with my findings.
 
 ##Networking
-As usual for a typical Docker Engine install, dind configures its own bridge network.  However, this network connects the dind container network to the network interface of the dind server container, not the Docker Engine Host network.  In other words, the dind container network is encapsulated within the Docker Engine Host container network.  This isn't typically an issue when running a single dind server container instance and there isn't a need to connect to a container within the dind container network from the Docker Engine Host container network.  The trouble begins when attempting to concurrently run two dind server containers, as by default they are assigned the same IP network identifier or if you're attempting to connect a container or service, like x11, running on the Docker Engine Host to one in the dind container network.  In the second situation, you may be able to add a route using ```ip route add``` to forward the dind container network packets from the Docker Engine Host to the dind server bridge.
+As usual for a typical Docker Engine install, dind configures its own bridge network.  However, this network connects the dind container network to the network interface of the dind server container, not the Docker Engine Host network.  In other words, the dind container network is encapsulated within the Docker Engine Host container network.  This isn't typically an issue when running a single dind server container instance and there isn't a need to connect to a container within the dind container network from the Docker Engine Host container network.  The trouble begins when attempting to concurrently run two dind server containers, as by default they are assigned the same IP network identifier or if you're attempting to connect a container or service, like x11, running on the Docker Engine Host to one in the dind container network.  In the second situation, you may be able to add a route using ```ip route add sudo ip route add <IP NETORK> via <IP Address of dind server container> dev docker0``` to forward the dind container network packets from the Docker Engine Host to the dind server bridge.
 
 Regarding the situation, involving duplicate IP network identifiers, it would seem that this can be solved by configuring the dind server with custom networking.  Need to investigate.
 
