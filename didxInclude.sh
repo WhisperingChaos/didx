@@ -163,11 +163,14 @@ OPTIONS:
                                         local repository. If necessary, terminate
                                         running instances.
                                         Delete all server data volumes.
+                               rpt:     List all server & client containers then exit.
   -s,--storage-driver=$stgDrvrDefault  Docker storage driver name.  Determines method
                                 applied to physically represent and manage images and
                                 containers stored locally by the Docker server container.
                                 Value defaults to the one utilized by the Docker instance
-                                managing the Docker server container.  
+                                managing the Docker server container.
+  --dkropts                  Other Docker Engine startup options enclosed in quotes to
+                                apply to Docker server.
   --cv-env=DIND_CLIENT_NAME  Environment variable name which contains the Docker client's
                                container name.  Use in COMMAND to identify client container.
   -h,--help=false            Don't display this help message.
@@ -189,7 +192,7 @@ cat <<VERSION_DOC
 Version : 0.5
 Requires: bash 4.0+, Docker Client
 Issues  : https://github.com/WhisperingChaos/dkind/issues
-License : The MIT License (MIT) Copyright (c) 2016 Richard Moyse License@Moyse.US
+License : The MIT License (MIT) Copyright (c) 2016-2017 Richard Moyse License@Moyse.US
 
 VERSION_DOC
 }
@@ -207,13 +210,14 @@ VirtCmmdOptionsArgsDef(){
 # optArgName cardinality default verifyFunction presence alias
 cat <<OPTIONARGS
 ArgN             single ''                ''                                              optional
---sv	         single 'latest'          ''                                              required
+--sv             single 'latest'          ''                                              required
 --cv             single ''                ''                                              optional
 --pull           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--pull\\>'"       required "-p"
 --storage-driver single '$stgDrvrDefault' ''                                              required "-s" 
 --cv-env         single 'DIND_CLIENT_NAME' "option_envName_Verify    '\\<--cv-env\\>'"    required
 --cp=N           single ''                "option_cp_format_Verify  '\\<--cp=N\\>'"       optional
 -v=N             single ''                "option_volume_format_Verify  '\\<-v=N\\>'"     optional
+--dkropts        single ''                ''                                              optional
 --clean          single 'none'            "option_clean_Verify      '\\<--clean\\>'"      required
 --help           single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--help\\>'"       required "-h"
 --version        single false=EXIST=true  "OptionsArgsBooleanVerify '\\<--version\\>'"    required
@@ -300,11 +304,11 @@ option_volume_format_Verify(){
 ###############################################################################
 option_clean_Verify(){
   case $1 in
-    none|success|failure|anycase|all) 
+    none|success|failure|anycase|all|rpt) 
       true
     ;;
     *)
-      ScriptError "Expected --clean values: 'none|success|failure|anycase|all', encountered: '$1'."
+      ScriptError "Expected --clean values: 'none|success|failure|anycase|all|rpt', encountered: '$1'."
     ;;
   esac
 }
@@ -333,6 +337,10 @@ VirtCmmdExecute(){
     server_client_Iterate 'all' 'server_or_client_Destroy "$containerType" "$containerName"'
     # terminate script
     return
+  elif [ "$cleanDirective" == 'rpt' ]; then
+    server_client_Iterate 'all' 'dind_container_report "$containerType" "$containerName"'
+    # terminate script
+    return
   fi
   # obtain server version
   local serverVersion
@@ -356,6 +364,10 @@ VirtCmmdExecute(){
   local -r storageDriver
   # start the docker server
   local -r serverName="dind_$$_server_${serverVersion}"
+	local dkopts
+  AssociativeMapAssignIndirect "$optArgMap_ref" '--dkropts' 'dkropts'
+  ScriptDebug "$LINENO" "--dkropts: $dkropts"
+	local -r dkopts
   # need to pull fresh server and client
   local dockerPull
   AssociativeMapAssignIndirect "$optArgMap_ref" '--pull' 'dockerPull'
@@ -365,7 +377,7 @@ VirtCmmdExecute(){
       ScriptUnwind "$LINENO" "Failed to pull Docker server image: 'docker:$stag'."
     fi
   fi
-  if ! docker run --privileged -d --name $serverName -v "$DOCKER_LOCAL_REPRO_PATH" docker:$stag /usr/local/bin/dockerd-entrypoint.sh --storage-driver=$storageDriver >/dev/null; then
+  if ! docker run --privileged -d --name $serverName -v "$DOCKER_LOCAL_REPRO_PATH" docker:$stag /usr/local/bin/dockerd-entrypoint.sh --storage-driver=$storageDriver $dkropts >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker server from image: 'docker:$stag', with container name: '$serverName'."
   fi
   # set trap to destroy when something unexpected happens.
@@ -734,8 +746,8 @@ server_client_Clean(){
 server_client_Iterate(){
   local -r pattern="$1"  # currently ignored
   local -r funExec="$2"
-  local -r dindpatternClient='dind_[0-9]+_client_([0-9.rcgit-]+|latest)'
-  local -r dindpatternServer='dind_[0-9]+_server_([0-9.rc-]+|latest)'
+  local -r dindpatternClient='dind_[0-9]+_client_([0-9.rcegit-]+|latest)'
+  local -r dindpatternServer='dind_[0-9]+_server_([0-9.rce-]+|latest)'
 
   local containerType
   local containerName
@@ -832,6 +844,23 @@ server_client_report(){
   dind_Report 'server' "$serverName" "$status"
   dind_Report 'client' "$clientName" "$status"
 }
+###########################################################################
+##
+##  Purpose:
+##    Report on dind server or client.
+##
+##  Input:
+##    $1  - Container type: 'client' or 'server'
+##    $2  - Container name. 
+##
+###########################################################################
+dind_container_report(){
+  local -r containerType="$1" 
+  local -r containerName="$2"
+
+  dind_Report "${containerType}" "$containerName" "found"
+}
+
 ###########################################################################
 dind_Report(){
   ScriptInform "dind $1 named: '$2' $3."
