@@ -377,7 +377,7 @@ VirtCmmdExecute(){
       ScriptUnwind "$LINENO" "Failed to pull Docker server image: 'docker:$stag'."
     fi
   fi
-  if ! docker run --privileged -d --name $serverName -v "$DOCKER_LOCAL_REPRO_PATH" docker:$stag /usr/local/bin/dockerd-entrypoint.sh --storage-driver=$storageDriver $dkropts >/dev/null; then
+  if ! eval docker run \-\-privileged \-d \-i \-t \-\-name \$serverName \-v \"\$DOCKER_LOCAL_REPRO_PATH\" docker:\$stag /usr/local/bin/dockerd-entrypoint.sh \-\-storage-driver\=\$storageDriver $dkropts >/dev/null; then
     ScriptUnwind "$LINENO" "Failed to start Docker server from image: 'docker:$stag', with container name: '$serverName'."
   fi
   # set trap to destroy when something unexpected happens.
